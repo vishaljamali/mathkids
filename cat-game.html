@@ -49,38 +49,79 @@
 <body>
 <h1>Cat Blaster</h1>
 <div id="canvas-wrap"><canvas id="game"></canvas></div>
-<div class="nav">
-  <a href="index.html">🏠 Home</a>
-  <a href="math-quiz.html">🧮 Math Quiz</a>
-</div>
-<div class="dpad">
-  <button class="dpad-btn" id="btn-up" aria-label="Move up">▲</button>
-  <button class="dpad-btn" id="btn-down" aria-label="Move down">▼</button>
-</div>
-<p class="hint">↑ ↓ arrow keys or mouse · auto-fire</p>
+<div class="controls" style="width:100%;max-width:800px;display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
+  <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+    Difficulty:
+    <select id="difficulty" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+      <option value="easy">Easy</option>
+      <option value="normal" selected>Normal</option>
+      <option value="hard">Hard</option>
+    </select>
+  </label>
+  <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+    <div class="nav">
+      <a href="index.html">🏠 Home</a>
+      <a href="math-quiz.html">🧮 Math Quiz</a>
+    </div>
+    <div id="controls" style="margin-top:10px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;">
+      <label style="font-weight:700;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.03);padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);">
+        Difficulty:
+        <select id="difficulty" style="background:transparent;color:#fff;border:none;font-weight:700;">
+          <option value="easy">Easy</option>
+          <option value="normal" selected>Normal</option>
+          <option value="hard">Hard</option>
+        </select>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
+        <input type="checkbox" id="practice"/> Practice mode
+      </label>
+      <button id="muteBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#fff;">🔊</button>
+    </div>
+
+    <div class="dpad">
+      <button class="dpad-btn" id="btn-up" aria-label="Move up">▲</button>
+      <button class="dpad-btn" id="btn-down" aria-label="Move down">▼</button>
+    </div>
+    <p class="hint">↑ ↓ arrow keys or mouse · auto-fire</p>
+
+    <div id="sound-unlock" style="position:fixed;left:0;top:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(0,0,0,0.6),rgba(0,0,0,0.4));display:flex;align-items:center;justify-content:center;z-index:9999;">
+      <button id="unlockBtn" style="font-size:18px;padding:18px 26px;border-radius:12px;border:none;background:#f9c74f;color:#0b0a1e;font-weight:800;">Tap to enable sound ▶</button>
+    </div>
 <script>
 // ── SETUP ──────────────────────────────────────────────────────────────────
 const W=800,H=500,GROUND_Y=H-58,CAT_X=78,MDX=102,MDY=16;
 const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
 canvas.width=W; canvas.height=H;
-function resize(){const s=Math.min(window.innerWidth-20,W)/W;
-  canvas.style.width=(W*s)+'px';canvas.style.height=(H*s)+'px';}
-window.addEventListener('resize',resize); resize();
+function resize(){
+    const s=Math.min(window.innerWidth-20,W)/W;
+    // set CSS size
+    canvas.style.width=(W*s)+'px';canvas.style.height=(H*s)+'px';
+    // backing store scaling for high-DPR devices
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    // normalize drawing operations to CSS pixels
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  window.addEventListener('resize',resize); resize();
 
 // ── AUDIO ──────────────────────────────────────────────────────────────────
 let _ac=null;
 function getAC(){return _ac||(_ac=new(window.AudioContext||window.webkitAudioContext)());}
+let muted=false;
+let soundUnlocked=false;
 function tone(f,type,dur,vol,fe){
-  try{const o=getAC().createOscillator(),g=getAC().createGain();
+  if(muted) return; // respect mute
+  try{const ac=getAC();const o=ac.createOscillator(),g=ac.createGain();
     o.type=type;o.frequency.value=f;
-    if(fe)o.frequency.exponentialRampToValueAtTime(fe,getAC().currentTime+dur);
-    g.gain.setValueAtTime(vol,getAC().currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,getAC().currentTime+dur);
-    o.connect(g);g.connect(getAC().destination);o.start();o.stop(getAC().currentTime+dur);
+    if(fe)o.frequency.exponentialRampToValueAtTime(fe,ac.currentTime+dur);
+    g.gain.setValueAtTime(vol,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+dur);
+    o.connect(g);g.connect(ac.destination);o.start();o.stop(ac.currentTime+dur);
   }catch(e){}
 }
 let _lastShoot=0;
-const SFX={
+const SFX={n:
   shoot:()=>{const n=Date.now();if(n-_lastShoot<55)return;_lastShoot=n;tone(900,'square',0.07,0.12,180);},
   hit:()=>tone(240,'sawtooth',0.13,0.25,60),
   bossHit:()=>tone(120,'sawtooth',0.18,0.35,40),
@@ -139,14 +180,43 @@ const GUN_CFG=[null,
   {offsets:[-22,-7,7,22],rate:6,r:10,vx:20,col:'#ff44ff',label:'QUAD',  glowCol:'#cc00ff'},
 ];
 
-// ── LEVEL CONFIG ────────────────────────────────────────────────────────────
-const LEVEL_CFG=[null,
-  {killsForBoss:15,enemySpeedMult:1.0,spawnBase:96, bossHP:30, bossSpeed:1.2,bossFireRate:150,bossProjSpeed:4,  p2At:.50,bossName:'RAT KING',   bossSize:130},
-  {killsForBoss:18,enemySpeedMult:1.4,spawnBase:70, bossHP:55, bossSpeed:1.9,bossFireRate:100,bossProjSpeed:5.5,p2At:.50,bossName:'RAT EMPEROR',bossSize:145},
-  {killsForBoss:22,enemySpeedMult:1.9,spawnBase:46, bossHP:100,bossSpeed:2.6,bossFireRate:62, bossProjSpeed:8,  p2At:.62,bossName:'DEMON RAT',   bossSize:162},
+// ── LEVEL CONFIG (base + difficulty modifiers) ─────────────────────────────
+const BASE_LEVEL_CFG=[null,
+  {killsForBoss:15,enemySpeedMult:1.0,spawnBase:96, bossHP:30,  bossSpeed:1.2,bossFireRate:150,bossProjSpeed:4,  p2At:.50,bossName:'RAT KING',   bossSize:130},
+  {killsForBoss:18,enemySpeedMult:1.4,spawnBase:70, bossHP:55,  bossSpeed:1.9,bossFireRate:100,bossProjSpeed:5.5,p2At:.50,bossName:'RAT EMPEROR',bossSize:145},
+  {killsForBoss:22,enemySpeedMult:1.9,spawnBase:46, bossHP:100, bossSpeed:2.6,bossFireRate:62, bossProjSpeed:8,  p2At:.62,bossName:'DEMON RAT',   bossSize:162},
   {killsForBoss:10,enemySpeedMult:2.2,spawnBase:40, bossHP:140,bossSpeed:3.0,bossFireRate:72, bossProjSpeed:9, p2At:.55,bossName:'BLOOD KING',  bossSize:180},
 ];
+let LEVEL_CFG=null; // will be built from BASE_LEVEL_CFG
 const MAX_LEVEL=4;
+
+let currentDifficulty='normal';
+let practiceMode=false;
+
+function applyDifficulty(){
+  // build LEVEL_CFG from BASE_LEVEL_CFG applying multipliers
+  const diff=currentDifficulty;
+  LEVEL_CFG=[null];
+  for(let i=1;i<=MAX_LEVEL;i++){
+    const b=BASE_LEVEL_CFG[i];
+    if(!b){LEVEL_CFG[i]=null;continue;}
+    // base multipliers
+    let hpMul=1,speedMul=1,spawnMul=1,fireMul=1,killsMul=1;
+    if(diff==='easy'){hpMul=0.75; speedMul=0.9; spawnMul=1.05; fireMul=1.25; killsMul=1.4}
+    else if(diff==='hard'){hpMul=1.25; speedMul=1.08; spawnMul=0.95; fireMul=0.85; killsMul=0.9}
+    // practice mode reduces HP and makes boss appear earlier
+    if(practiceMode){hpMul*=0.55; killsMul*=0.6; spawnMul*=1.1;}
+    LEVEL_CFG[i]=Object.assign({},b);
+    LEVEL_CFG[i].bossHP = Math.max(1,Math.round(b.bossHP * hpMul));
+    LEVEL_CFG[i].enemySpeedMult = b.enemySpeedMult * speedMul;
+    LEVEL_CFG[i].spawnBase = Math.max(18, Math.round(b.spawnBase * spawnMul));
+    LEVEL_CFG[i].bossFireRate = Math.max(10, Math.round(b.bossFireRate * fireMul));
+    LEVEL_CFG[i].bossProjSpeed = Math.max(1, Math.round(b.bossProjSpeed * (1 + (speedMul-1)*0.5)));
+    LEVEL_CFG[i].killsForBoss = Math.max(3, Math.round(b.killsForBoss * killsMul));
+  }
+}
+// initial build
+applyDifficulty();
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 let state,score,best,lives,frame,level,killCount;
@@ -594,7 +664,14 @@ function spawnBoss(){
     speed:cfg.bossSpeed,fireRate:cfg.bossFireRate,projSpeed:cfg.bossProjSpeed,
     fireTimer:60,chargeTimer:350,state:'entering',hit:0,dead:false,
     dyingAlpha:1,dyingTimer:0,phase2Triggered:false,hitRadius:cfg.bossSize*1.1};
+  // special burst and FX for Blood King
   SFX.bossRoar();shakePow=20;
+  if(level===4){
+    // bigger entrance explosion and sound
+    for(let i=0;i<6;i++)setTimeout(()=>explode(boss.x-40 + rnd(-40,40), boss.y + rnd(-40,40), true), i*60);
+    // dramatic tones
+    if(!muted){tone(120,'sawtooth',0.5,0.42);setTimeout(()=>tone(240,'triangle',0.28,0.22),140);}  
+  }
 }
 
 function explode(x,y,big){
@@ -623,10 +700,16 @@ function updateBoss(){
     boss.y+=Math.sin(frame*0.025)*0.6;boss.y=clamp(boss.y,80,GROUND_Y-80);
     const p2threshold=LEVEL_CFG[level].p2At;
     if(boss.hp<boss.maxHp*p2threshold&&!boss.phase2Triggered){
-      boss.phase2Triggered=true;phase2Banner=110;
-      boss.fireRate=Math.floor(boss.fireRate*.5);boss.projSpeed*=1.4;
-      shakePow=22;screenFlash=.9;SFX.bossRoar();
-    }
+          boss.phase2Triggered=true;phase2Banner=110;
+          boss.fireRate=Math.floor(boss.fireRate*.5);boss.projSpeed*=1.4;
+          shakePow=22;screenFlash=.9;SFX.bossRoar();
+          // extra Blood King enraged FX
+          if(level===4){
+            for(let i=0;i<18;i++){particles.push({x:boss.x + rnd(-boss.size,boss.size), y:boss.y + rnd(-boss.size,boss.size), vx:rnd(-6,6), vy:rnd(-6,6), life:1, c:'#ff6666', r:rnd(2,6)});}        
+            if(!muted){[300,420,560,720].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.12,0.16),i*80));}
+            shakePow=34;screenFlash=1.0;
+          }
+        }
     boss.fireTimer--;
     if(boss.fireTimer<=0){
       boss.fireTimer=boss.fireRate;
