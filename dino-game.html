@@ -75,10 +75,21 @@
       <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">
         <input type="checkbox" id="practice"/> Practice mode
       </label>
-      <button id="startBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#4cc9f0;color:#04202a;font-weight:700;">▶ Start</button>
-      <button id="resetBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#f3722c;color:#0b0a1e;font-weight:700;">⟲ Reset</button>
-      <button id="muteBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#fff;">🔊</button>
-    </div>
+      <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+              Appearance:
+              <select id="appearance" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+                <option value="normal" selected>Normal</option>
+                <option value="fierce">Fierce</option>
+                <option value="cute">Cute</option>
+              </select>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+              <input type="checkbox" id="roarOnBoss"/> Roar on boss
+            </label>
+            <button id="startBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#4cc9f0;color:#04202a;font-weight:700;">▶ Start</button>
+            <button id="resetBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#f3722c;color:#0b0a1e;font-weight:700;">⟲ Reset</button>
+            <button id="muteBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#fff;">🔊</button>
+          </div>
 
     <div class="dpad">
       <button class="dpad-btn" id="btn-up" aria-label="Move up">▲</button>
@@ -195,6 +206,8 @@ const MAX_LEVEL=4;
 
 let currentDifficulty='normal';
 let practiceMode=false;
+let appearance='normal';
+let roarOnBoss=false; // play special roar when boss spawns/phase2 for fierce skin
 
 function applyDifficulty(){
   // build LEVEL_CFG from BASE_LEVEL_CFG applying multipliers
@@ -711,7 +724,12 @@ function spawnBoss(){
     fireTimer:60,chargeTimer:350,state:'entering',hit:0,dead:false,
     dyingAlpha:1,dyingTimer:0,phase2Triggered:false,hitRadius:cfg.bossSize*1.1};
   // special burst and FX for Blood King
+  // play the base roar always for feedback, but add extra if user wants roars and chose fierce skin
   SFX.bossRoar();shakePow=20;
+  if(appearance==='fierce' && roarOnBoss && !muted){
+    // extra low rumble sequence
+    tone(70,'sawtooth',0.6,0.45);setTimeout(()=>tone(110,'sine',0.28,0.32),180);
+  }
   if(level===4){
     // bigger entrance explosion and sound
     for(let i=0;i<6;i++)setTimeout(()=>explode(boss.x-40 + rnd(-40,40), boss.y + rnd(-40,40), true), i*60);
@@ -748,8 +766,14 @@ function updateBoss(){
     if(boss.hp<boss.maxHp*p2threshold&&!boss.phase2Triggered){
           boss.phase2Triggered=true;phase2Banner=110;
           boss.fireRate=Math.floor(boss.fireRate*.5);boss.projSpeed*=1.4;
-          shakePow=22;screenFlash=.9;SFX.bossRoar();
-          // extra Blood King enraged FX
+          shakePow=22;screenFlash=.9;
+          // base roar
+          SFX.bossRoar();
+          // extra enraged FX if fierce skin + roar enabled
+          if(appearance==='fierce' && roarOnBoss && !muted){
+            tone(60,'sawtooth',0.6,0.45);setTimeout(()=>tone(180,'sine',0.32,0.28),140);
+          }
+          // extra Blood King enraged FX visuals
           if(level===4){
             for(let i=0;i<18;i++){particles.push({x:boss.x + rnd(-boss.size,boss.size), y:boss.y + rnd(-boss.size,boss.size), vx:rnd(-6,6), vy:rnd(-6,6), life:1, c:'#ff6666', r:rnd(2,6)});}        
             if(!muted){[300,420,560,720].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.12,0.16),i*80));}
@@ -962,14 +986,17 @@ function loop(ts){
 
         // Start / Reset controls
         function startGame(){
-          unlockSound();
-          // apply difficulty and practice flags
-          currentDifficulty = document.getElementById('difficulty').value || 'normal';
-          practiceMode = document.getElementById('practice').checked || false;
-          applyDifficulty();
-          initGame(false);
-          state='playing';
-        }
+                  unlockSound();
+                  // apply difficulty and practice flags
+                  currentDifficulty = document.getElementById('difficulty').value || 'normal';
+                  practiceMode = document.getElementById('practice').checked || false;
+                  // appearance & roar
+                  appearance = document.getElementById('appearance')?document.getElementById('appearance').value:'normal';
+                  roarOnBoss = !!(document.getElementById('roarOnBoss')&&document.getElementById('roarOnBoss').checked);
+                  applyDifficulty();
+                  initGame(false);
+                  state='playing';
+                }
         function resetGame(){
           // reload page to clear any state, keep user on same URL
           try{location.reload();}catch(e){initGame(false);state='paused';}
