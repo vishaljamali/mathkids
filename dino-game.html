@@ -293,82 +293,80 @@ function drawBackground(){
   ctx.fillStyle='#100f28';ctx.fillRect(0,GROUND_Y-9,W,11);
 }
 
-// ── DRAW: DINO (more detailed, still lightweight) ─────────────────────────
+// ── DRAW: DINO (scaly + a bit fiercer, still lightweight) ───────────────────
 function drawCat(cx,cy){
-  // Function name kept for game logic; draws a more "realistic" friendly dino.
   const x = cx + recoil, y = cy;
   const bob = Math.sin(frame*0.06)*1.6;
-  ctx.save();
-  ctx.translate(x,y+bob);
+  ctx.save(); ctx.translate(x, y + bob);
 
-  // drop shadow under the dino (cheap)
-  ctx.fillStyle = 'rgba(0,0,0,0.28)';
-  ctx.beginPath(); ctx.ellipse(6, 38, 56, 14, 0, 0, Math.PI*2); ctx.fill();
+  // colors
+  const body = '#2b8fb8';
+  const dark = '#1f6e88';
+  const belly = '#cfe8ef';
+  const scaleCol = '#1b6b8a';
+  const eyeCol = '#ffcc33';
 
-  // Body main (slightly textured with two tones)
-  ctx.fillStyle = '#5aa94a';
-  ctx.beginPath(); ctx.ellipse(0, 0, 46, 28, -0.05, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#4b8e3a';
-  ctx.beginPath(); ctx.ellipse(-6, 4, 46, 28, -0.05, 0, Math.PI*2); ctx.globalAlpha = 0.18; ctx.fill(); ctx.globalAlpha = 1;
+  // soft shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(6, 40, 64, 16, 0, 0, Math.PI*2); ctx.fill();
 
-  // Belly highlight
-  ctx.fillStyle = '#dfeecf';
-  ctx.beginPath(); ctx.ellipse(8, 8, 26, 14, 0, 0, Math.PI*2); ctx.fill();
+  // body
+  ctx.fillStyle = body; ctx.beginPath(); ctx.ellipse(0, 0, 48, 30, -0.06, 0, Math.PI*2); ctx.fill();
+  // darker side for depth
+  ctx.fillStyle = dark; ctx.globalAlpha = 0.18; ctx.beginPath(); ctx.ellipse(-8, 6, 48, 30, -0.06, 0, Math.PI*2); ctx.fill(); ctx.globalAlpha = 1;
+  // belly
+  ctx.fillStyle = belly; ctx.beginPath(); ctx.ellipse(10, 10, 28, 14, 0, 0, Math.PI*2); ctx.fill();
 
-  // Tail (thick base tapering to tip)
-  ctx.fillStyle = '#4b8e3a';
-  ctx.beginPath();
-  ctx.moveTo(-42, 6);
-  ctx.quadraticCurveTo(-84, 6, -120, -14);
-  ctx.quadraticCurveTo(-92, -2, -48, -18);
-  ctx.closePath(); ctx.fill();
-
-  // Tail stripe (darker)
-  ctx.strokeStyle = 'rgba(30,60,20,0.25)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(-40,10); ctx.quadraticCurveTo(-80,6,-112,-10); ctx.stroke();
-
-  // Legs (muscular) — back then front
-  ctx.fillStyle = '#4e9a3f';
-  ctx.beginPath(); ctx.ellipse(12,30,14,18,0.2,0,Math.PI*2); ctx.fill(); // front leg
-  ctx.beginPath(); ctx.ellipse(-8,34,16,20,0.15,0,Math.PI*2); ctx.fill(); // back leg
-  // claws
-  ctx.fillStyle = '#2e2e2e';
-  [[20,36],[8,36],[ -4,44 ]].forEach(p=>{ctx.beginPath();ctx.ellipse(p[0],p[1],3.5,2.8,0,0,Math.PI*2);ctx.fill();});
-
-  // Back osteoderms / small plates (more natural than triangles)
-  for(let i=0;i<6;i++){
-    const sx = -18 + i*14;
-    const sy = -14 + Math.sin(frame*0.12 + i*0.6)*2;
-    ctx.beginPath(); ctx.ellipse(sx, sy, 6, 10, -0.2, 0, Math.PI*2);
-    ctx.fillStyle = i%2? '#6fc15b' : '#3f8b33'; ctx.fill();
+  // scaly texture (small semicircles) — lightweight loop
+  ctx.fillStyle = scaleCol;
+  for(let r=0;r<3;r++){
+    const oy = -8 + r*8;
+    for(let i= -30;i<30;i+=10){
+      const sx = i + ((r%2)?5:0);
+      ctx.beginPath(); ctx.arc(sx, oy, 4, Math.PI, 2*Math.PI); ctx.fill();
+    }
   }
 
-  // Neck and head (more dinosaur-like jaw)
-  ctx.fillStyle = '#5aa94a';
-  ctx.beginPath(); ctx.ellipse(44, -22 + Math.sin(frame*0.08)*1.6, 24, 20, -0.15, 0, Math.PI*2); ctx.fill();
+  // tail (taper) with subtle banding
+  ctx.fillStyle = dark; ctx.beginPath(); ctx.moveTo(-44, 6); ctx.quadraticCurveTo(-86, 6, -118, -18); ctx.quadraticCurveTo(-90, -2, -48, -20); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(-40,12); ctx.quadraticCurveTo(-80,8,-112,-10); ctx.stroke();
 
-  // Lower jaw (slightly lighter)
-  ctx.fillStyle = '#cfe0b9';
-  ctx.beginPath(); ctx.ellipse(56, -8, 18, 10, 0.12, 0, Math.PI*2); ctx.fill();
+  // legs with stronger claws
+  ctx.fillStyle = dark; ctx.beginPath(); ctx.ellipse(14,30,16,20,0.25,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-6,36,18,22,0.12,0,Math.PI*2); ctx.fill();
+  // claws (bigger)
+  ctx.fillStyle = '#222'; [[22,42],[18,42],[12,42]].forEach(p=>{ctx.beginPath();ctx.ellipse(p[0],p[1],4.2,3.2,0,0,Math.PI*2);ctx.fill();});
 
-  // Nostrils
-  ctx.fillStyle = '#29431e'; ctx.beginPath(); ctx.ellipse(60, -30, 2.6, 1.6, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(66, -29, 1.8, 1.2, 0, 0, Math.PI*2); ctx.fill();
-
-  // Eye with iris and highlight
-  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(50, -28, 6, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#2a3b10'; ctx.beginPath(); ctx.arc(51.5, -27.5, 3.4, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(53, -30, 1.2, 0, Math.PI*2); ctx.fill();
-
-  // Teeth (small, along lower jaw) — lightweight: a few white triangles
-  ctx.fillStyle = '#ffffff';
-  for(let t=0;t<4;t++){
-    const tx = 46 + t*5 + Math.sin(frame*0.2 + t)*0.6;
-    const ty = -2 + Math.cos(t*0.7)*0.6;
-    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx+3, ty+6); ctx.lineTo(tx-3, ty+6); ctx.closePath(); ctx.fill();
+  // scales along back (raised plates)
+  for(let i=0;i<7;i++){
+    const sx = -22 + i*14;
+    const sy = -14 + Math.sin(frame*0.12 + i*0.8)*2;
+    ctx.beginPath(); ctx.ellipse(sx, sy, 7, 12, -0.2, 0, Math.PI*2);
+    ctx.fillStyle = (i%2? '#2fa3c6' : '#196a78'); ctx.fill();
   }
 
-  // Small cheek shading
-  ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.beginPath(); ctx.ellipse(44, -8, 22, 10, 0, 0, Math.PI*2); ctx.fill();
+  // neck/head
+  ctx.fillStyle = body; ctx.beginPath(); ctx.ellipse(46, -22 + Math.sin(frame*0.08)*1.6, 26, 22, -0.12, 0, Math.PI*2); ctx.fill();
+  // lower jaw
+  ctx.fillStyle = belly; ctx.beginPath(); ctx.ellipse(60, -8, 20, 11, 0.12, 0, Math.PI*2); ctx.fill();
+
+  // eye — narrower, fiercer
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(50, -28, 6.5, 5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = eyeCol; ctx.beginPath(); ctx.ellipse(52, -28, 3.4, 3, 0, 0, Math.PI*2); ctx.fill();
+  // vertical slit pupil
+  ctx.fillStyle = '#0a0a0a'; ctx.beginPath(); ctx.ellipse(52.2, -28, 1.2, 3.2, 0, 0, Math.PI*2); ctx.fill();
+  // eye highlight
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'; ctx.beginPath(); ctx.arc(53.4, -29.2, 1.0, 0, Math.PI*2); ctx.fill();
+
+  // sharper teeth — a few white triangles on the upper jaw too
+  ctx.fillStyle = '#fff';
+  for(let t=0;t<5;t++){
+    const tx = 46 + t*4.5 + Math.sin(frame*0.18 + t)*0.3;
+    const ty = -6 + Math.cos(t*0.4)*0.5;
+    ctx.beginPath(); ctx.moveTo(tx, ty); ctx.lineTo(tx+3, ty-7); ctx.lineTo(tx-3, ty-0); ctx.closePath(); ctx.fill();
+  }
+
+  // small scar / fierce mark
+  ctx.strokeStyle = 'rgba(255,80,80,0.9)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(40, -36); ctx.lineTo(54, -20); ctx.stroke();
 
   ctx.restore();
 }
