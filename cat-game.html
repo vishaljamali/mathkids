@@ -290,39 +290,40 @@ function drawBackground(){
   ctx.fillStyle='#100f28';ctx.fillRect(0,GROUND_Y-9,W,11);
 }
 
-// ── DRAW: CAT (simplified — ~18 ops) ──────────────────────────────────────
+// ── DRAW: DINO (replaces cat) ─────────────────────────────────────────────
 function drawCat(cx,cy){
-  const x=cx+recoil,y=cy;
-  const b=Math.sin(frame*0.065)*1.6;
-  // tail
-  ctx.beginPath();ctx.moveTo(x-20,y+10+b);
-  ctx.bezierCurveTo(x-48,y+15,x-55,y-18,x-40,y-34);
-  ctx.strokeStyle='#c06810';ctx.lineWidth=7;ctx.lineCap='round';ctx.stroke();
+  // We keep the function name drawCat to avoid changing game logic.
+  const x = cx + recoil, y = cy;
+  const b = Math.sin(frame*0.065)*1.6;
+  // tail (thick and curvy)
+  ctx.beginPath(); ctx.moveTo(x-18, y+8+b);
+  ctx.quadraticCurveTo(x-52, y+6+b, x-70, y-24+b);
+  ctx.strokeStyle = '#2e8b2e'; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.stroke();
   // body
-  ctx.fillStyle='#e07818';
-  ctx.beginPath();ctx.ellipse(x+2,y+b,32,20,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle = '#66bb44';
+  ctx.beginPath(); ctx.ellipse(x+6, y+b, 36, 22, 0, 0, Math.PI*2); ctx.fill();
   // belly
-  ctx.fillStyle='#f0a040';
-  ctx.beginPath();ctx.ellipse(x+5,y+7+b,20,12,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle = '#cfecc0'; ctx.beginPath(); ctx.ellipse(x+8, y+8+b, 22, 12, 0, 0, Math.PI*2); ctx.fill();
+  // back spikes
+  for(let i=0;i<5;i++){
+    const sx = x - 6 + i*14;
+    const sy = y - 12 + Math.sin(frame*0.15 + i)*2;
+    ctx.fillStyle = i%2? '#7bd26b' : '#4ea43a';
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx+8, sy-18); ctx.lineTo(sx+16, sy); ctx.closePath(); ctx.fill();
+  }
   // head
-  ctx.fillStyle='#e87f1e';
-  ctx.beginPath();ctx.arc(x+38,y-22+b,20,0,Math.PI*2);ctx.fill();
-  // ears
-  ctx.fillStyle='#e07818';
-  ctx.beginPath();ctx.moveTo(x+24,y-34+b);ctx.lineTo(x+18,y-54+b);ctx.lineTo(x+32,y-40+b);ctx.closePath();ctx.fill();
-  ctx.beginPath();ctx.moveTo(x+36,y-40+b);ctx.lineTo(x+45,y-56+b);ctx.lineTo(x+52,y-38+b);ctx.closePath();ctx.fill();
-  ctx.fillStyle='#ffbbcc';
-  ctx.beginPath();ctx.moveTo(x+23,y-36+b);ctx.lineTo(x+20,y-50+b);ctx.lineTo(x+30,y-41+b);ctx.closePath();ctx.fill();
-  ctx.beginPath();ctx.moveTo(x+38,y-41+b);ctx.lineTo(x+45,y-53+b);ctx.lineTo(x+50,y-39+b);ctx.closePath();ctx.fill();
+  ctx.fillStyle = '#66bb44'; ctx.beginPath(); ctx.arc(x+44, y-24+b, 20, 0, Math.PI*2); ctx.fill();
   // eye
-  ctx.fillStyle='#80cc28';ctx.beginPath();ctx.arc(x+44,y-24+b,6.5,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#0a0a0a';ctx.beginPath();ctx.ellipse(x+44,y-24+b,2.5,6,0.2,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='rgba(255,255,255,0.8)';ctx.beginPath();ctx.arc(x+46,y-26+b,1.8,0,Math.PI*2);ctx.fill();
-  // nose
-  ctx.fillStyle='#ff9999';ctx.beginPath();ctx.arc(x+56,y-16+b,3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x+48, y-28+b, 6, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#0a0a0a'; ctx.beginPath(); ctx.arc(x+49, y-28+b, 2.2, 0, Math.PI*2); ctx.fill();
+  // mouth / smile
+  ctx.strokeStyle = '#8b1e1e'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x+56, y-16+b); ctx.lineTo(x+68, y-12+b); ctx.stroke();
   // front leg
-  ctx.fillStyle='#d07015';ctx.beginPath();ctx.ellipse(x+24,y+12+b,10,15,-0.2,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#c06010';ctx.beginPath();ctx.ellipse(x+22,y+26+b,11,6,0.1,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle = '#4ea43a'; ctx.beginPath(); ctx.ellipse(x+20, y+18+b, 10, 14, -0.2, 0, Math.PI*2); ctx.fill();
+  // back leg
+  ctx.beginPath(); ctx.ellipse(x-2, y+24+b, 12, 16, 0.1, 0, Math.PI*2); ctx.fill();
+  // small arm (cute)
+  ctx.fillStyle = '#66bb44'; ctx.beginPath(); ctx.ellipse(x+36, y+2+b, 6, 8, -0.4, 0, Math.PI*2); ctx.fill();
 }
 
 // ── DRAW: GUN (simplified — ~7 ops) ───────────────────────────────────────
