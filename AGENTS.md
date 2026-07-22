@@ -28,7 +28,7 @@ My website has two pages:
 | Page | What it does |
 |---|---|
 | 🧮 **Math Quiz** (`math-quiz.html`) | A math game with a 20-second timer per question. Addition, subtraction, multiplication, division. Einstein is in the background! |
-| 🐱 **Cat Blaster** (`cat-game.html`) | An action game where a cat shoots evil rats. There are 3 levels, power-ups for the gun, and boss fights. |
+| 🦖 **Dino Blaster** (`dino-game.html`) | An action game where a friendly dinosaur shoots evil rats and bats. There are 4 levels, power-ups for the gun, and boss fights. |
 
 The home page is `index.html`.
 
