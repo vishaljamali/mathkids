@@ -36,7 +36,8 @@
     .card {
       position: relative; z-index: 1;
       text-align: center;
-      padding: 20px 24px 36px;
+      padding: clamp(12px, 4vw, 20px) clamp(12px, 4vw, 24px) clamp(20px, 5vw, 36px);
+      width: 100%;
     }
 
     h1 {
@@ -54,54 +55,59 @@
       opacity: 0.5;
       letter-spacing: 2px;
       text-transform: uppercase;
-      margin-bottom: 52px;
+      margin-bottom: clamp(24px, 6vw, 52px);
     }
 
     /* ── game buttons ── */
     .games {
       display: flex;
-      gap: 24px;
-      flex-wrap: wrap;
-      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+      width: 100%;
     }
 
     .game-btn {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
       text-decoration: none;
       color: #fff;
       background: rgba(255,255,255,0.06);
       border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 24px;
-      padding: 32px 36px;
-      width: 220px;
+      border-radius: 20px;
+      padding: 18px 24px;
+      width: min(380px, 90vw);
+      gap: 18px;
       transition: transform 0.18s, background 0.18s, border-color 0.18s;
       cursor: pointer;
+      min-height: 80px;
     }
     .game-btn:hover {
-      transform: translateY(-6px) scale(1.03);
+      transform: translateY(-3px) scale(1.02);
       background: rgba(255,255,255,0.12);
       border-color: rgba(255,255,255,0.28);
     }
     .game-btn:active { transform: scale(0.97); }
 
     .game-btn .icon {
-      font-size: 3.8rem;
-      margin-bottom: 16px;
-      filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4));
+      font-size: 3rem;
+      flex-shrink: 0;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
     }
 
+    .game-btn .text { text-align: left; }
+
     .game-btn .name {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 800;
       letter-spacing: 1px;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
     .game-btn .desc {
       font-size: 0.78rem;
       color: rgba(255,255,255,0.72);
-      line-height: 1.5;
+      line-height: 1.45;
     }
 
     .math-btn  { border-color: rgba(76, 201, 240, 0.3); }
@@ -111,6 +117,29 @@
     .cat-btn   { border-color: rgba(249, 199, 79, 0.3); }
     .cat-btn .name   { color: #f9c74f; }
     .cat-btn:hover   { border-color: #f9c74f; }
+
+    /* Tablet and up — side-by-side cards */
+    @media (min-width: 520px) {
+      .games {
+        flex-direction: row;
+        justify-content: center;
+        gap: 24px;
+      }
+      .game-btn {
+        flex-direction: column;
+        justify-content: center;
+        padding: 32px 28px;
+        width: 210px;
+        min-height: 200px;
+        gap: 0;
+      }
+      .game-btn .icon {
+        font-size: 3.6rem;
+        margin-bottom: 14px;
+      }
+      .game-btn .text { text-align: center; }
+      .game-btn .name { margin-bottom: 8px; }
+    }
 
     /* ── footer ── */
     .footer {
@@ -135,14 +164,18 @@
 
     <a class="game-btn math-btn" href="math-quiz.html">
       <div class="icon">🧮</div>
-      <div class="name">Math Quiz</div>
-      <div class="desc">Answer maths questions<br>beat the 20-second timer!</div>
+      <div class="text">
+        <div class="name">Math Quiz</div>
+        <div class="desc">Answer maths questions · beat the 20‑second timer!</div>
+      </div>
     </a>
 
     <a class="game-btn cat-btn" href="cat-game.html">
       <div class="icon">🐱🔫</div>
-      <div class="name">Cat Blaster</div>
-      <div class="desc">Shoot evil rats, collect<br>power-ups &amp; beat 3 bosses!</div>
+      <div class="text">
+        <div class="name">Cat Blaster</div>
+        <div class="desc">Shoot evil rats · collect power-ups · beat 3 bosses!</div>
+      </div>
     </a>
 
   </div>

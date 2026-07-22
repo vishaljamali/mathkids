@@ -51,7 +51,7 @@
       backdrop-filter: blur(12px);
       border: 1px solid rgba(255,255,255,0.15);
       border-radius: 28px;
-      padding: 40px 48px;
+      padding: clamp(18px, 5vw, 40px) clamp(14px, 5vw, 48px);
       width: min(480px, 92vw);
       text-align: center;
       box-shadow: 0 20px 60px rgba(0,0,0,0.4);
@@ -59,7 +59,7 @@
 
     /* ── Title ── */
     h1 {
-      font-size: 2.4rem;
+      font-size: clamp(1.5rem, 5vw, 2.4rem);
       font-weight: 800;
       letter-spacing: 1px;
       margin-bottom: 6px;
@@ -83,7 +83,7 @@
       padding: 10px 0;
     }
     .score-box .label { font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
-    .score-box .value { font-size: 1.6rem; font-weight: 700; margin-top: 2px; }
+    .score-box .value { font-size: clamp(1.1rem, 4vw, 1.6rem); font-weight: 700; margin-top: 2px; }
     #score-val   { color: #4cc9f0; }
     #streak-val  { color: #f9c74f; }
     #best-val    { color: #90be6d; }
@@ -120,7 +120,7 @@
       margin-bottom: 6px;
     }
     #question {
-      font-size: 2.8rem;
+      font-size: clamp(1.8rem, 7vw, 2.8rem);
       font-weight: 800;
       letter-spacing: 2px;
       animation: pop 0.35s cubic-bezier(.36,1.56,.64,1);
@@ -148,6 +148,7 @@
       outline: none;
       text-align: center;
       transition: border-color 0.2s;
+      min-height: 48px;
     }
     #answer:focus { border-color: #4cc9f0; }
     #answer::placeholder { opacity: 0.3; font-weight: 400; }
@@ -167,6 +168,7 @@
       background: linear-gradient(135deg, #4361ee, #7209b7);
       color: #fff;
       flex-shrink: 0;
+      min-height: 48px;
     }
 
     /* ── Mode buttons ── */
@@ -178,8 +180,8 @@
       flex-wrap: wrap;
     }
     .mode-btn {
-      padding: 7px 16px;
-      font-size: 0.82rem;
+      padding: 10px 14px;
+      font-size: 0.85rem;
       border-radius: 99px;
       background: rgba(255,255,255,0.08);
       color: rgba(255,255,255,0.6);
@@ -252,13 +254,14 @@
       background: rgba(255,255,255,0.1);
       border: 1px solid rgba(255,255,255,0.2);
       border-radius: 28px;
-      padding: 44px 52px;
+      padding: clamp(24px, 6vw, 44px) clamp(18px, 6vw, 52px);
+      width: min(360px, 90vw);
       text-align: center;
       animation: pop 0.4s cubic-bezier(.36,1.56,.64,1);
     }
     .go-card h2 { font-size: 2.2rem; margin-bottom: 8px; }
     .go-card .go-score {
-      font-size: 4rem; font-weight: 900; margin: 16px 0;
+      font-size: clamp(2.4rem, 10vw, 4rem); font-weight: 900; margin: 16px 0;
       background: linear-gradient(90deg, #f9c74f, #f8961e);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
@@ -280,6 +283,14 @@
       80%     { transform: translateX(8px); }
     }
     .shake { animation: shake 0.4s ease; }
+
+    @media (max-width: 360px) {
+      .scorebar { gap: 6px; }
+      .score-box { padding: 8px 0; }
+      .timer-wrap { margin-bottom: 14px; }
+      .mode-row { gap: 5px; }
+      .mode-btn { padding: 8px 10px; font-size: 0.78rem; }
+    }
   </style>
 </head>
 <body>
@@ -303,8 +314,10 @@
 <div class="card">
   <h1>🧮 MathKids</h1>
   <p class="subtitle">Train your brain — one question at a time!</p>
-  <a href="index.html" style="display:inline-block;margin-bottom:10px;padding:7px 18px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);font-size:0.82rem;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.12);">🏠 Home</a>
-    <a href="cat-game.html" style="display:inline-block;margin-bottom:10px;padding:7px 18px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);font-size:0.82rem;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.12);">🐱 Cat Blaster</a>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:14px;">
+    <a href="index.html" style="padding:8px 18px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);font-size:0.82rem;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.12);min-height:36px;display:flex;align-items:center;">🏠 Home</a>
+    <a href="cat-game.html" style="padding:8px 18px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);font-size:0.82rem;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.12);min-height:36px;display:flex;align-items:center;">🐱 Cat Blaster</a>
+  </div>
 
   <!-- Score bar -->
   <div class="scorebar">
