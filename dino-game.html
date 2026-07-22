@@ -877,7 +877,27 @@ function loop(ts){
   draw();
 }
 initGame(false);
-requestAnimationFrame(loop);
-</script>
+// make sound unlock and mute controls work for mobile devices
+    const _unlockDiv = document.getElementById('sound-unlock');
+    const _unlockBtn = document.getElementById('unlockBtn');
+    const _muteBtn = document.getElementById('muteBtn');
+    function unlockSound(){
+      if(soundUnlocked) return;
+      try{getAC().resume();}catch(e){}
+      soundUnlocked = true;
+      if(_unlockDiv) _unlockDiv.style.display = 'none';
+    }
+    if(_unlockBtn){
+      _unlockBtn.addEventListener('click', e=>{e.stopPropagation(); unlockSound();});
+    }
+    // also accept any first tap/click/keydown as unlock (makes it easier)
+    ['click','touchstart','keydown'].forEach(ev=>document.addEventListener(ev, function once(){unlockSound(); document.removeEventListener(ev, once);}, {passive:true}));
+    // mute button
+    if(_muteBtn){
+      _muteBtn.addEventListener('click', ()=>{muted = !muted; _muteBtn.textContent = muted? '🔇' : '🔊';});
+    }
+
+    requestAnimationFrame(loop);
+    </script>
 </body>
 </html>
