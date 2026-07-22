@@ -85,8 +85,9 @@
     <p class="hint">↑ ↓ arrow keys or mouse · auto-fire</p>
 
     <div id="sound-unlock" style="position:fixed;left:0;top:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(0,0,0,0.6),rgba(0,0,0,0.4));display:flex;align-items:center;justify-content:center;z-index:9999;">
-      <button id="unlockBtn" style="font-size:18px;padding:18px 26px;border-radius:12px;border:none;background:#f9c74f;color:#0b0a1e;font-weight:800;">Tap to enable sound ▶</button>
-    </div>
+          <!-- Make the button respond to clicks and touches directly (Safari friendly) -->
+          <button id="unlockBtn" onclick="unlockSound()" ontouchstart="unlockSound()" style="font-size:18px;padding:22px 30px;border-radius:12px;border:none;background:#f9c74f;color:#0b0a1e;font-weight:800;">Tap to enable sound ▶</button>
+        </div>
 <script>
 // ── SETUP ──────────────────────────────────────────────────────────────────
 const W=800,H=500,GROUND_Y=H-58,CAT_X=78,MDX=102,MDY=16;
@@ -888,16 +889,26 @@ initGame(false);
       if(_unlockDiv) _unlockDiv.style.display = 'none';
     }
     if(_unlockBtn){
-      _unlockBtn.addEventListener('click', e=>{e.stopPropagation(); unlockSound();});
-    }
-    // also accept any first tap/click/keydown as unlock (makes it easier)
-    ['click','touchstart','keydown'].forEach(ev=>document.addEventListener(ev, function once(){unlockSound(); document.removeEventListener(ev, once);}, {passive:true}));
-    // mute button
-    if(_muteBtn){
-      _muteBtn.addEventListener('click', ()=>{muted = !muted; _muteBtn.textContent = muted? '🔇' : '🔊';});
-    }
+          _unlockBtn.addEventListener('click', e=>{e.stopPropagation(); unlockSound();});
+          // also attempt to handle touchstart directly on the button
+          _unlockBtn.addEventListener('touchstart', e=>{e.stopPropagation(); unlockSound();}, {passive:false});
+        }
+        // also accept any first tap/click/keydown as unlock (makes it easier)
+        ['click','touchstart','keydown'].forEach(ev=>{
+          const handler = function once(e){unlockSound(); document.removeEventListener(ev, once);};
+          document.addEventListener(ev, handler, {passive:true});
+        });
+        // Also try to unlock if user touches the canvas directly (iOS sometimes needs touch on canvas)
+        try{canvas.addEventListener('touchstart', function cs(e){ unlockSound(); e.preventDefault(); canvas.removeEventListener('touchstart', cs);}, {passive:false});}catch(e){}
+        // mute button
+        if(_muteBtn){
+          _muteBtn.addEventListener('click', ()=>{muted = !muted; _muteBtn.textContent = muted? '🔇' : '🔊';});
+        }
 
-    requestAnimationFrame(loop);
+        // expose for inline onclick (Safari may require global function)
+        try{window.unlockSound = unlockSound;}catch(e){}
+
+        requestAnimationFrame(loop);
     </script>
 </body>
 </html>
