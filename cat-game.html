@@ -144,8 +144,9 @@ const LEVEL_CFG=[null,
   {killsForBoss:15,enemySpeedMult:1.0,spawnBase:96, bossHP:30, bossSpeed:1.2,bossFireRate:150,bossProjSpeed:4,  p2At:.50,bossName:'RAT KING',   bossSize:130},
   {killsForBoss:18,enemySpeedMult:1.4,spawnBase:70, bossHP:55, bossSpeed:1.9,bossFireRate:100,bossProjSpeed:5.5,p2At:.50,bossName:'RAT EMPEROR',bossSize:145},
   {killsForBoss:22,enemySpeedMult:1.9,spawnBase:46, bossHP:100,bossSpeed:2.6,bossFireRate:62, bossProjSpeed:8,  p2At:.62,bossName:'DEMON RAT',   bossSize:162},
+  {killsForBoss:30,enemySpeedMult:2.2,spawnBase:40, bossHP:140,bossSpeed:3.0,bossFireRate:72, bossProjSpeed:9, p2At:.55,bossName:'BLOOD KING',  bossSize:180},
 ];
-const MAX_LEVEL=3;
+const MAX_LEVEL=4;
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 let state,score,best,lives,frame,level,killCount;
@@ -334,13 +335,22 @@ function drawBoss(b){
   ctx.save();ctx.translate(b.x,b.y);
   if(b.dyingAlpha<1)ctx.globalAlpha=b.dyingAlpha;
   const cfg3=level===3;
+  const cfg4=level===4;
   const p2t=LEVEL_CFG[level].p2At;
   const p2=b.hp<b.maxHp*p2t,S=b.size/55;
   ctx.scale(-S,S);
   let bc=p2?'#441818':'#252525',bdc=p2?'#2a0c0c':'#141414',hc=p2?'#ff5500':'#888';
   if(cfg3){bc=p2?'#3a0848':'#1e0530';bdc=p2?'#280035':'#140020';hc=p2?'#ff1100':'#cc44ff';}
+  else if(cfg4){ /* blood king visuals */
+    bc = p2 ? '#480808' : '#2b0707';
+    bdc = p2 ? '#3a0000' : '#150202';
+    hc = p2 ? '#ff3322' : '#bb2222';
+  }
   // p2 aura (cheap colored circle)
-  if(p2){ctx.fillStyle=`rgba(255,50,0,${0.08+0.05*Math.sin(frame*0.15)})`;ctx.beginPath();ctx.arc(10,-10,72,0,Math.PI*2);ctx.fill();}
+  if(p2){
+    ctx.fillStyle = cfg4 ? `rgba(220,24,24,${0.12+0.06*Math.sin(frame*0.18)})` : `rgba(255,50,0,${0.08+0.05*Math.sin(frame*0.15)})`;
+    ctx.beginPath();ctx.arc(10,-10,72,0,Math.PI*2);ctx.fill();
+  }
   // tail
   ctx.beginPath();ctx.moveTo(-35,15);ctx.bezierCurveTo(-60,25,-72,-5,-60,-30);
   ctx.strokeStyle=p2?'#882020':'#444';ctx.lineWidth=14;ctx.lineCap='round';ctx.stroke();
@@ -625,19 +635,20 @@ function updateBoss(){
       const shots=boss.phase2Triggered?(level>=3?5:3):1;
       for(let s=0;s<shots;s++){const spread=(s-Math.floor(shots/2))*.28;bossProjectiles.push({x:px,y:py,vx:(dx/dist)*boss.projSpeed,vy:(dy/dist)*boss.projSpeed+spread,r:12});}
     }
-    // Level 3 only: circle blast every ~260 frames
-    if(level===3){
-      if(!boss.circleTimer)boss.circleTimer=260;
+    // Level 3+ : circle blast (stronger on level 4)
+    if(level>=3){
+      if(!boss.circleTimer)boss.circleTimer = (level===4?200:260);
       boss.circleTimer--;
       if(boss.circleTimer<=0){
-        boss.circleTimer=boss.phase2Triggered?180:260;
+        boss.circleTimer = boss.phase2Triggered ? (level===4?120:180) : (level===4?200:260);
         const px=boss.x-boss.size*1.2,py=boss.y;
-        const blastShots=boss.phase2Triggered?12:8;
+        const blastShots = boss.phase2Triggered ? (level===4?18:12) : (level===4?12:8);
+        const speedMul = level===4?1.1:0.75;
         for(let i=0;i<blastShots;i++){
           const ang=(i/blastShots)*Math.PI*2;
-          bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed*.75,vy:Math.sin(ang)*boss.projSpeed*.75,r:10});
+          bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed*speedMul,vy:Math.sin(ang)*boss.projSpeed*speedMul,r:(level===4?12:10)});
         }
-        shakePow=18;screenFlash=.5;
+        shakePow = level===4?30:18; screenFlash = level===4?0.9:0.5;
       }
     }
     boss.chargeTimer--;
