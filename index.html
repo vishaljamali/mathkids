@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MathKids 🎮</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background:
+        linear-gradient(135deg, rgba(10,10,30,0.85) 0%, rgba(15,30,70,0.80) 100%),
+        url('einstein.jpg') center center / cover no-repeat fixed;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    /* ── stars ── */
+    .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .star {
+      position: absolute; width: 3px; height: 3px;
+      border-radius: 50%; background: #fff; opacity: 0;
+      animation: twinkle var(--d) infinite var(--delay) ease-in-out;
+    }
+    @keyframes twinkle {
+      0%,100% { opacity: 0; } 50% { opacity: 0.7; }
+    }
+
+    /* ── card ── */
+    .card {
+      position: relative; z-index: 1;
+      text-align: center;
+      padding: 20px 24px 36px;
+    }
+
+    h1 {
+      font-size: clamp(2.4rem, 8vw, 3.8rem);
+      font-weight: 900;
+      letter-spacing: 2px;
+      background: linear-gradient(90deg, #f9c74f, #f8961e, #f3722c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .tagline {
+      font-size: 1rem;
+      opacity: 0.5;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 52px;
+    }
+
+    /* ── game buttons ── */
+    .games {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .game-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-decoration: none;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 32px 36px;
+      width: 220px;
+      transition: transform 0.18s, background 0.18s, border-color 0.18s;
+      cursor: pointer;
+    }
+    .game-btn:hover {
+      transform: translateY(-6px) scale(1.03);
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.28);
+    }
+    .game-btn:active { transform: scale(0.97); }
+
+    .game-btn .icon {
+      font-size: 3.8rem;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 4px 16px rgba(0,0,0,0.4));
+    }
+
+    .game-btn .name {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+    .game-btn .desc {
+      font-size: 0.78rem;
+      opacity: 0.45;
+      line-height: 1.5;
+    }
+
+    .math-btn  { border-color: rgba(76, 201, 240, 0.3); }
+    .math-btn .name  { color: #4cc9f0; }
+    .math-btn:hover  { border-color: #4cc9f0; }
+
+    .cat-btn   { border-color: rgba(249, 199, 79, 0.3); }
+    .cat-btn .name   { color: #f9c74f; }
+    .cat-btn:hover   { border-color: #f9c74f; }
+
+    /* ── footer ── */
+    .footer {
+      position: fixed;
+      bottom: 18px;
+      font-size: 0.72rem;
+      opacity: 0.25;
+      letter-spacing: 1px;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="card">
+  <h1>🎮 MathKids</h1>
+  <p class="tagline">learn · play · win</p>
+
+  <div class="games">
+
+    <a class="game-btn math-btn" href="math-quiz.html">
+      <div class="icon">🧮</div>
+      <div class="name">Math Quiz</div>
+      <div class="desc">Answer maths questions<br>beat the 20-second timer!</div>
+    </a>
+
+    <a class="game-btn cat-btn" href="cat-game.html">
+      <div class="icon">🐱🔫</div>
+      <div class="name">Cat Blaster</div>
+      <div class="desc">Shoot evil rats, collect<br>power-ups &amp; beat 3 bosses!</div>
+    </a>
+
+  </div>
+</div>
+
+<p class="footer">Made with ❤️ by a 4th grader from Germany</p>
+
+<script>
+  // stars
+  const wrap = document.getElementById('stars');
+  for (let i = 0; i < 70; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:${Math.random()*5}s;`;
+    wrap.appendChild(s);
+  }
+</script>
+</body>
+</html>

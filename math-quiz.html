@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MathKids 🧮</title>
+  <style>
+    /* ── Page ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background:
+        linear-gradient(135deg, rgba(10,10,30,0.82) 0%, rgba(15,30,70,0.78) 100%),
+        url('einstein.jpg')
+        center center / cover no-repeat fixed;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    /* ── Floating stars background ── */
+    .stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .star {
+      position: absolute;
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: #fff;
+      opacity: 0;
+      animation: twinkle var(--d) infinite var(--delay) ease-in-out;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; transform: scale(1); }
+      50%       { opacity: 0.8; transform: scale(1.4); }
+    }
+
+    /* ── Card ── */
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 28px;
+      padding: 40px 48px;
+      width: min(480px, 92vw);
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    }
+
+    /* ── Title ── */
+    h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, #f9c74f, #f8961e, #f3722c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { font-size: 0.95rem; opacity: 0.55; margin-bottom: 28px; }
+
+    /* ── Score bar ── */
+    .scorebar {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      gap: 12px;
+    }
+    .score-box {
+      flex: 1;
+      background: rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 10px 0;
+    }
+    .score-box .label { font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; letter-spacing: 1px; }
+    .score-box .value { font-size: 1.6rem; font-weight: 700; margin-top: 2px; }
+    #score-val   { color: #4cc9f0; }
+    #streak-val  { color: #f9c74f; }
+    #best-val    { color: #90be6d; }
+
+    /* ── Progress bar ── */
+    .progress-wrap {
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      height: 8px;
+      margin-bottom: 32px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #4cc9f0, #7209b7);
+      transition: width 0.4s ease;
+    }
+
+    /* ── Question ── */
+    .question-wrap {
+      margin-bottom: 28px;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .topic-badge {
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.45;
+      margin-bottom: 6px;
+    }
+    #question {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      animation: pop 0.35s cubic-bezier(.36,1.56,.64,1);
+    }
+    @keyframes pop {
+      from { opacity: 0; transform: scale(0.7); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    /* ── Input ── */
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    #answer {
+      flex: 1;
+      padding: 14px 18px;
+      font-size: 1.4rem;
+      font-weight: 700;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      outline: none;
+      text-align: center;
+      transition: border-color 0.2s;
+    }
+    #answer:focus { border-color: #4cc9f0; }
+    #answer::placeholder { opacity: 0.3; font-weight: 400; }
+
+    button {
+      padding: 14px 24px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.12s, opacity 0.12s;
+    }
+    button:active { transform: scale(0.95); }
+
+    #btn-check {
+      background: linear-gradient(135deg, #4361ee, #7209b7);
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    /* ── Mode buttons ── */
+    .mode-row {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+    }
+    .mode-btn {
+      padding: 7px 16px;
+      font-size: 0.82rem;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.6);
+      border: 1px solid rgba(255,255,255,0.12);
+      font-weight: 600;
+    }
+    .mode-btn.active {
+      background: linear-gradient(135deg, #f9c74f, #f8961e);
+      color: #1a1a2e;
+      border-color: transparent;
+    }
+
+    /* ── Feedback ── */
+    #feedback {
+      font-size: 1.3rem;
+      font-weight: 700;
+      min-height: 34px;
+      transition: opacity 0.3s;
+    }
+    #feedback.correct { color: #90be6d; }
+    #feedback.wrong   { color: #f94144; }
+
+    /* ── Confetti canvas ── */
+    #confetti-canvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    /* ── Timer ── */
+    .timer-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .timer-ring-wrap {
+      position: relative;
+      width: 64px; height: 64px;
+      flex-shrink: 0;
+    }
+    .timer-ring-wrap svg {
+      transform: rotate(-90deg);
+    }
+    .timer-bg   { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 5; }
+    .timer-arc  { fill: none; stroke-width: 5; stroke-linecap: round;
+                  stroke: #4cc9f0; transition: stroke-dashoffset 0.9s linear, stroke 0.4s; }
+    .timer-num {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; font-weight: 800;
+    }
+    .timer-label { font-size: 0.8rem; opacity: 0.5; letter-spacing: 1px; text-transform: uppercase; }
+    .timer-wrap.danger .timer-arc  { stroke: #f94144; }
+    .timer-wrap.danger .timer-num  { color: #f94144; animation: pulse 0.6s infinite alternate; }
+    @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.2); } }
+
+    /* ── Game Over overlay ── */
+    #gameover {
+      display: none;
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    #gameover.show { display: flex; }
+    .go-card {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 28px;
+      padding: 44px 52px;
+      text-align: center;
+      animation: pop 0.4s cubic-bezier(.36,1.56,.64,1);
+    }
+    .go-card h2 { font-size: 2.2rem; margin-bottom: 8px; }
+    .go-card .go-score {
+      font-size: 4rem; font-weight: 900; margin: 16px 0;
+      background: linear-gradient(90deg, #f9c74f, #f8961e);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .go-card .go-sub { opacity: 0.55; font-size: 0.95rem; margin-bottom: 28px; }
+    #btn-restart {
+      background: linear-gradient(135deg, #4361ee, #7209b7);
+      color: #fff; font-size: 1.1rem; padding: 14px 36px; border-radius: 14px;
+      border: none; cursor: pointer; font-weight: 700;
+      transition: transform 0.12s;
+    }
+    #btn-restart:active { transform: scale(0.95); }
+
+    /* ── Shake animation for wrong ── */
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-10px); }
+      40%     { transform: translateX(10px); }
+      60%     { transform: translateX(-8px); }
+      80%     { transform: translateX(8px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+  </style>
+</head>
+<body>
+
+<!-- Stars background -->
+<div class="stars" id="stars"></div>
+
+<!-- Game Over overlay -->
+<div id="gameover">
+  <div class="go-card">
+    <h2>🎉 Round Over!</h2>
+    <div class="go-score" id="go-score">0</div>
+    <div class="go-sub" id="go-sub">0 correct answers</div>
+    <button id="btn-restart" onclick="restartGame()">🔄 Play Again</button>
+  </div>
+</div>
+
+<!-- Confetti -->
+<canvas id="confetti-canvas"></canvas>
+
+<div class="card">
+  <h1>🧮 MathKids</h1>
+  <p class="subtitle">Train your brain — one question at a time!</p>
+  <a href="index.html" style="display:inline-block;margin-bottom:10px;padding:7px 18px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);font-size:0.82rem;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.12);">🏠 Home</a>
+    <a href="cat-game.html" style="display:inline-block;margin-bottom:10px;padding:7px 18px;border-radius:99px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.65);font-size:0.82rem;font-weight:600;text-decoration:none;border:1px solid rgba(255,255,255,0.12);">🐱 Cat Blaster</a>
+
+  <!-- Score bar -->
+  <div class="scorebar">
+    <div class="score-box">
+      <div class="label">Score</div>
+      <div class="value" id="score-val">0</div>
+    </div>
+    <div class="score-box">
+      <div class="label">🔥 Streak</div>
+      <div class="value" id="streak-val">0</div>
+    </div>
+    <div class="score-box">
+      <div class="label">Best</div>
+      <div class="value" id="best-val">0</div>
+    </div>
+  </div>
+
+  <!-- Timer -->
+  <div class="timer-wrap" id="timer-wrap">
+    <div class="timer-ring-wrap">
+      <svg width="64" height="64" viewBox="0 0 64 64">
+        <circle class="timer-bg"  cx="32" cy="32" r="27"/>
+        <circle class="timer-arc" cx="32" cy="32" r="27"
+          id="timer-arc"
+          stroke-dasharray="169.6"
+          stroke-dashoffset="0"/>
+      </svg>
+      <div class="timer-num" id="timer-num">60</div>
+    </div>
+    <div class="timer-label">seconds left</div>
+  </div>
+
+  <!-- Progress bar (10 questions per round) -->
+  <div class="progress-wrap">
+    <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+
+  <!-- Mode selector -->
+  <div class="mode-row">
+    <button class="mode-btn active" data-mode="mix"     onclick="setMode('mix')">🎲 Mix</button>
+    <button class="mode-btn"        data-mode="add"     onclick="setMode('add')">➕ Add</button>
+    <button class="mode-btn"        data-mode="sub"     onclick="setMode('sub')">➖ Sub</button>
+    <button class="mode-btn"        data-mode="mul"     onclick="setMode('mul')">✖️ Mul</button>
+    <button class="mode-btn"        data-mode="div"     onclick="setMode('div')">➗ Div</button>
+  </div>
+
+  <!-- Question -->
+  <div class="question-wrap">
+    <div class="topic-badge" id="topic-badge">addition</div>
+    <div id="question">Loading…</div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-row">
+    <input id="answer" type="number" placeholder="?" autocomplete="off" />
+    <button id="btn-check" onclick="checkAnswer()">✓ Check</button>
+  </div>
+
+  <!-- Feedback -->
+  <div id="feedback"></div>
+</div>
+
+<script>
+  // ── Stars ──────────────────────────────────────────────────────────────
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --d:${2 + Math.random()*4}s;
+      --delay:${Math.random()*4}s;
+    `;
+    starsEl.appendChild(s);
+  }
+
+  // ── State ──────────────────────────────────────────────────────────────
+  let score   = 0;
+  let streak  = 0;
+  let best    = parseInt(localStorage.getItem('mathkids-best') || '0');
+  let correct = 0;           // answers right this round
+  let total   = 0;           // questions asked this round
+  let mode    = 'mix';
+  let currentAnswer = 0;
+  let gameActive = false;
+
+  // ── Timer ──────────────────────────────────────────────────────────────
+  const TIMER_START = 20;
+  const ARC_FULL    = 169.6;  // 2 * π * 27
+  let timeLeft      = TIMER_START;
+  let timerInterval = null;
+
+  function startTimer() {
+    timeLeft = TIMER_START;
+    updateTimerUI();
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      updateTimerUI();
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        // time ran out on this question — counts as wrong
+        streak = 0;
+        updateScores();
+        const fb = document.getElementById('feedback');
+        fb.className = 'wrong';
+        fb.textContent = `⏰ Too slow! The answer was ${currentAnswer}.`;
+        document.querySelector('.card').classList.remove('shake');
+        void document.querySelector('.card').offsetWidth;
+        document.querySelector('.card').classList.add('shake');
+        total++;
+        updateProgress();
+        if (total >= 10) {
+          setTimeout(endGame, 900);
+        } else {
+          setTimeout(newQuestion, 900);
+        }
+      }
+    }, 1000);
+  }
+
+  function updateTimerUI() {
+    document.getElementById('timer-num').textContent = timeLeft;
+    const offset = ARC_FULL * (1 - timeLeft / TIMER_START);
+    document.getElementById('timer-arc').setAttribute('stroke-dashoffset', offset);
+    const wrap = document.getElementById('timer-wrap');
+    wrap.classList.toggle('danger', timeLeft <= 10);
+  }
+
+  function endGame() {
+    gameActive = false;
+    document.getElementById('answer').disabled = true;
+    document.getElementById('btn-check').disabled = true;
+    // update best
+    if (score > best) {
+      best = score;
+      localStorage.setItem('mathkids-best', best);
+    }
+    document.getElementById('go-score').textContent = score;
+    document.getElementById('go-sub').textContent =
+      correct + ' correct answer' + (correct !== 1 ? 's' : '');
+    document.getElementById('gameover').classList.add('show');
+  }
+
+  function restartGame() {
+    document.getElementById('gameover').classList.remove('show');
+    score = 0; streak = 0; correct = 0; total = 0;
+    document.getElementById('answer').disabled = false;
+    document.getElementById('btn-check').disabled = false;
+    updateScores();
+    document.getElementById('progress-fill').style.width = '0%';
+    gameActive = true;
+    newQuestion();
+  }
+
+  document.getElementById('best-val').textContent = best;
+
+  // ── Mode ───────────────────────────────────────────────────────────────
+  function setMode(m) {
+    mode = m;
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === m);
+    });
+    newQuestion();
+  }
+
+  // ── Generate question ──────────────────────────────────────────────────
+  function newQuestion() {
+    clearFeedback();
+    document.getElementById('answer').value = '';
+    document.getElementById('answer').focus();
+    startTimer();
+
+    const ops = mode === 'mix' ? ['add','sub','mul','div'] : [mode];
+    const op  = ops[Math.floor(Math.random() * ops.length)];
+
+    let a, b, symbol, topic;
+
+    if (op === 'add') {
+      a = rand(10, 150); b = rand(10, 150);
+      symbol = '+'; topic = 'addition';
+      currentAnswer = a + b;
+    } else if (op === 'sub') {
+      a = rand(20, 200); b = rand(10, a - 1);
+      symbol = '−'; topic = 'subtraction';
+      currentAnswer = a - b;
+    } else if (op === 'mul') {
+      a = rand(2, 20); b = rand(2, 20);
+      symbol = '×'; topic = 'multiplication';
+      currentAnswer = a * b;
+    } else {
+      // division: generate clean result, no remainder
+      const result = rand(2, 15);
+      b = rand(2, 12);
+      a = result * b;
+      symbol = '÷'; topic = 'division';
+      currentAnswer = result;
+    }
+
+    document.getElementById('topic-badge').textContent = topic;
+    const qEl = document.getElementById('question');
+    qEl.textContent = `${a} ${symbol} ${b} = ?`;
+    qEl.style.animation = 'none';
+    qEl.offsetHeight; // reflow
+    qEl.style.animation = '';
+  }
+
+  function rand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  // ── Check answer ───────────────────────────────────────────────────────
+  function checkAnswer() {
+    if (!gameActive) return;
+    const input = document.getElementById('answer');
+    const val   = input.value.trim();
+    if (val === '') return;
+
+    total++;
+    updateProgress();
+
+    clearInterval(timerInterval);  // stop timer once answered
+
+    if (parseInt(val) === currentAnswer) {
+      // Correct!
+      score  += 10 + streak * 2;   // bonus for streaks
+      streak++;
+      correct++;
+      if (score > best) {
+        best = score;
+        localStorage.setItem('mathkids-best', best);
+      }
+      showFeedback(true);
+      updateScores();
+      launchConfetti();
+      if (total >= 10) {
+        setTimeout(endGame, 900);
+      } else {
+        setTimeout(newQuestion, 900);
+      }
+    } else {
+      // Wrong
+      streak = 0;
+      showFeedback(false, currentAnswer);
+      updateScores();
+      document.querySelector('.card').classList.remove('shake');
+      void document.querySelector('.card').offsetWidth;
+      document.querySelector('.card').classList.add('shake');
+      if (total >= 10) {
+        setTimeout(endGame, 1400);
+      } else {
+        setTimeout(newQuestion, 1400);
+      }
+    }
+  }
+
+  // ── UI helpers ─────────────────────────────────────────────────────────
+  function updateScores() {
+    document.getElementById('score-val').textContent  = score;
+    document.getElementById('streak-val').textContent = streak;
+    document.getElementById('best-val').textContent   = best;
+  }
+
+  function updateProgress() {
+    const pct = Math.min(total / 10 * 100, 100);
+    document.getElementById('progress-fill').style.width = pct + '%';
+  }
+
+  const CORRECT_MSGS = ['🎉 Amazing!', '⚡ Superfast!', '🌟 Brilliant!', '🔥 On fire!', '💪 You got it!', '🎯 Perfect!'];
+  const WRONG_MSGS   = ['💡 Almost!', '🤔 Not quite…', '😅 Keep going!', '💪 You\'ll get it!'];
+
+  function showFeedback(isCorrect, answer) {
+    const el = document.getElementById('feedback');
+    el.className = isCorrect ? 'correct' : 'wrong';
+    if (isCorrect) {
+      const bonus = streak > 1 ? ` (+${streak} streak bonus!)` : '';
+      el.textContent = CORRECT_MSGS[Math.floor(Math.random() * CORRECT_MSGS.length)] + bonus;
+    } else {
+      el.textContent = WRONG_MSGS[Math.floor(Math.random() * WRONG_MSGS.length)] + ` The answer was ${answer}.`;
+    }
+  }
+
+  function clearFeedback() {
+    const el = document.getElementById('feedback');
+    el.textContent = '';
+    el.className   = '';
+  }
+
+  // ── Enter key ──────────────────────────────────────────────────────────
+  document.getElementById('answer').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkAnswer();
+  });
+
+  // ── Confetti ───────────────────────────────────────────────────────────
+  const canvas  = document.getElementById('confetti-canvas');
+  const ctx     = canvas.getContext('2d');
+  let particles = [];
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function launchConfetti() {
+    const colors = ['#f9c74f','#4cc9f0','#f3722c','#90be6d','#f94144','#a8dadc'];
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x:  canvas.width  / 2 + (Math.random() - 0.5) * 200,
+        y:  canvas.height / 2 - 60,
+        vx: (Math.random() - 0.5) * 9,
+        vy: -Math.random() * 10 - 4,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: rand(5, 11),
+        angle: Math.random() * Math.PI * 2,
+        spin:  (Math.random() - 0.5) * 0.3,
+        life:  1,
+      });
+    }
+    if (!animating) animate();
+  }
+
+  let animating = false;
+  function animate() {
+    animating = true;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles = particles.filter(p => p.life > 0.01);
+    particles.forEach(p => {
+      p.x    += p.vx;
+      p.y    += p.vy;
+      p.vy   += 0.35;          // gravity
+      p.life -= 0.018;
+      p.angle += p.spin;
+      ctx.save();
+      ctx.globalAlpha = p.life;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.5);
+      ctx.restore();
+    });
+    if (particles.length > 0) {
+      requestAnimationFrame(animate);
+    } else {
+      animating = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  // ── Start ──────────────────────────────────────────────────────────────
+  gameActive = true;
+  newQuestion();
+</script>
+</body>
+</html>
