@@ -122,7 +122,7 @@ function tone(f,type,dur,vol,fe){
   }catch(e){}
 }
 let _lastShoot=0;
-const SFX={n:
+const SFX={
   shoot:()=>{const n=Date.now();if(n-_lastShoot<55)return;_lastShoot=n;tone(900,'square',0.07,0.12,180);},
   hit:()=>tone(240,'sawtooth',0.13,0.25,60),
   bossHit:()=>tone(120,'sawtooth',0.18,0.35,40),
