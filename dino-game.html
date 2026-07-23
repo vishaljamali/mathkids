@@ -266,13 +266,136 @@ let l10HpMul = 1.25; // saved multiplier (100..200 -> 1.0..2.0)
 let l10ProjMul = 1.0;
 
 // audio helper: try to play an audio element by id, fallback to tone sequence
+function audioBufferToWav(buffer, opt) {
+  opt = opt || {}
+  var numChannels = buffer.numberOfChannels
+  var sampleRate = buffer.sampleRate
+  var format = opt.float32 ? 3 : 1
+  var bitDepth = format === 3 ? 32 : 16
+
+  var result
+  if (numChannels === 2) {
+    result = interleave(buffer.getChannelData(0), buffer.getChannelData(1))
+  } else {
+    result = buffer.getChannelData(0)
+  }
+
+  return encodeWAV(result, format, sampleRate, numChannels, bitDepth)
+
+  function interleave(inputL, inputR) {
+    var length = inputL.length + inputR.length
+    var result = new Float32Array(length)
+
+    var index = 0
+    var inputIndex = 0
+
+    while (index < length) {
+      result[index++] = inputL[inputIndex]
+      result[index++] = inputR[inputIndex]
+      inputIndex++
+    }
+    return result
+  }
+
+  function floatTo16BitPCM(output, offset, input) {
+    for (var i = 0; i < input.length; i++, offset += 2) {
+      var s = Math.max(-1, Math.min(1, input[i]))
+      output.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true)
+    }
+  }
+
+  function writeString(view, offset, string) {
+    for (var i = 0; i < string.length; i++) {
+      view.setUint8(offset + i, string.charCodeAt(i))
+    }
+  }
+
+  function encodeWAV(samples, format, sampleRate, numChannels, bitDepth) {
+    var bytesPerSample = bitDepth / 8
+    var blockAlign = numChannels * bytesPerSample
+
+    var buffer = new ArrayBuffer(44 + samples.length * bytesPerSample)
+    var view = new DataView(buffer)
+
+    /* RIFF identifier */
+    writeString(view, 0, 'RIFF')
+    /* file length */
+    view.setUint32(4, 36 + samples.length * bytesPerSample, true)
+    /* RIFF type */
+    writeString(view, 8, 'WAVE')
+    /* format chunk identifier */
+    writeString(view, 12, 'fmt ')
+    /* format chunk length */
+    view.setUint32(16, 16, true)
+    /* sample format (raw) */
+    view.setUint16(20, format, true)
+    /* channel count */
+    view.setUint16(22, numChannels, true)
+    /* sample rate */
+    view.setUint32(24, sampleRate, true)
+    /* byte rate (sample rate * block align) */
+    view.setUint32(28, sampleRate * blockAlign, true)
+    /* block align (channel count * bytes per sample) */
+    view.setUint16(32, blockAlign, true)
+    /* bits per sample */
+    view.setUint16(34, bitDepth, true)
+    /* data chunk identifier */
+    writeString(view, 36, 'data')
+    /* data chunk length */
+    view.setUint32(40, samples.length * bytesPerSample, true)
+
+    if (format === 1) {
+      floatTo16BitPCM(view, 44, samples)
+    } else {
+      var offset = 44
+      for (var i = 0; i < samples.length; i++, offset += 4) {
+        view.setFloat32(offset, samples[i], true)
+      }
+    }
+
+    return new Blob([view], { type: 'audio/wav' })
+  }
+}
+
+async function generateAudioBlob(freqs){
+  // freqs: array of {freq,dur,type}
+  const sampleRate = 44100
+  const totalTime = freqs.reduce((s,f)=>s+f.dur,0)
+  const offline = new OfflineAudioContext(1, Math.ceil(totalTime*sampleRate), sampleRate)
+  let t=0
+  for(const f of freqs){
+    const o = offline.createOscillator(); const g = offline.createGain();
+    o.type = f.type||'sine'; o.frequency.value = f.freq; g.gain.setValueAtTime(f.vol||0.2, t);
+    o.connect(g); g.connect(offline.destination);
+    o.start(t); o.stop(t+f.dur);
+    t += f.dur;
+  }
+  const buf = await offline.startRendering();
+  return audioBufferToWav(buf);
+}
+
 function tryPlayAudio(id, fallbackFn){
   try{
     const el = document.getElementById(id);
-    if(el && el.src){
-      // try fetch to ensure file exists
+    if(!el) { if(fallbackFn) fallbackFn(); return; }
+    // If there is a real external src, try HEAD; otherwise generate a short blob audio and play
+    if(el.src && !el.src.endsWith('audio/'+id+'.mp3')){
       fetch(el.src, {method:'HEAD'}).then(r=>{ if(r.ok){ el.currentTime=0; el.play().catch(()=>{ if(fallbackFn)fallbackFn(); }); } else { if(fallbackFn)fallbackFn(); }}).catch(()=>{ if(fallbackFn)fallbackFn(); });
-    } else if(fallbackFn) fallbackFn();
+      return;
+    }
+    // If element has no real file, synthesize a small clip and set as src
+    (async ()=>{
+      try{
+        if(id==='audioLife'){
+          const blob = await generateAudioBlob([{freq:620,dur:0.12,type:'triangle',vol:0.16},{freq:740,dur:0.12,type:'triangle',vol:0.16},{freq:880,dur:0.12,type:'triangle',vol:0.16}]);
+          el.src = URL.createObjectURL(blob); el.currentTime=0; el.play().catch(()=>{ if(fallbackFn)fallbackFn(); });
+        } else if(id==='audioApex'){
+          const seq=[]; for(let i=0;i<5;i++){seq.push({freq:320+(i*80),dur:0.18,type:'triangle',vol:0.18});}
+          const blob = await generateAudioBlob(seq);
+          el.src = URL.createObjectURL(blob); el.currentTime=0; el.play().catch(()=>{ if(fallbackFn)fallbackFn(); });
+        } else { if(fallbackFn) fallbackFn(); }
+      }catch(e){ if(fallbackFn) fallbackFn(); }
+    })();
   }catch(e){ if(fallbackFn)fallbackFn(); }
 }
 
