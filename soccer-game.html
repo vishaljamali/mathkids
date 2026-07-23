@@ -99,10 +99,13 @@
 
     // player photo element — update when roster changes
     const playerPhoto = document.getElementById('playerPhoto');
-    function setPlayerPhoto(id){ try{ playerPhoto.src = 'images/portugal' + id + '.svg'; }catch(e){} }
+    function setPlayerPhoto(id){ try{ const jpg = 'images/portugal' + id + '.jpg'; const svg = 'images/portugal' + id + '.svg'; // prefer jpg if present
+          fetch(jpg, { method: 'HEAD' }).then(res => { if(res.ok) playerPhoto.src = jpg; else playerPhoto.src = svg; }).catch(()=>{ playerPhoto.src = svg; }); }catch(e){} }
     // listen for roster changes
     document.getElementById('playerSelect').addEventListener('change', (e)=>{ setPlayerPhoto(e.target.value); const val = parseInt(e.target.value||'1',10); // if first is GK, set keeper name
-      if(val===1) keeper.name = 'Rui Patrício'; else keeper.name = 'Rui Patrício'; });
+      keeper.name = (val===1 ? 'Rui Patrício' : 'Rui Patrício'); });
+    // set initial photo
+    setPlayerPhoto(document.getElementById('playerSelect').value);
 
     // confetti particles for celebration
     let confetti = [];
