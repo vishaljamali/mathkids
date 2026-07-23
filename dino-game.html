@@ -263,6 +263,19 @@ let roarOnBoss=false; // play special roar when boss spawns/phase2 for fierce sk
 let breathVolume = 0.06; // 0..0.2
 let breathSpeed = 420; // frames between breaths (180..720)
 let apexMode = 'superhard'; // normal | easier | superhard
+let l10HpMul = 1.25; // saved multiplier (100..200 -> 1.0..2.0)
+let l10ProjMul = 1.0;
+
+// audio helper: try to play an audio element by id, fallback to tone sequence
+function tryPlayAudio(id, fallbackFn){
+  try{
+    const el = document.getElementById(id);
+    if(el && el.src){
+      // try fetch to ensure file exists
+      fetch(el.src, {method:'HEAD'}).then(r=>{ if(r.ok){ el.currentTime=0; el.play().catch(()=>{ if(fallbackFn)fallbackFn(); }); } else { if(fallbackFn)fallbackFn(); }}).catch(()=>{ if(fallbackFn)fallbackFn(); });
+    } else if(fallbackFn) fallbackFn();
+  }catch(e){ if(fallbackFn)fallbackFn(); }
+}
 
 function applyDifficulty(){
   // update breath settings from controls if present (live)
@@ -270,8 +283,9 @@ function applyDifficulty(){
   try{const bs = document.getElementById('breathSpeed'); if(bs) breathSpeed = parseInt(bs.value,10);}catch(e){}
   try{const am = document.getElementById('apexMode'); if(am) apexMode = am.value;}catch(e){}
   // read level10 tuning
-  try{const l10hp = document.getElementById('l10hp'); if(l10hp) l10HpMul = parseInt(l10hp.value,10)/100;}catch(e){}
-  try{const l10proj = document.getElementById('l10proj'); if(l10proj) l10ProjMul = parseInt(l10proj.value,10)/100;}catch(e){}
+  try{const l10hp = document.getElementById('l10hp'); if(l10hp){ l10HpMul = parseInt(l10hp.value,10)/100; localStorage.setItem('dino-l10hp', l10hp.value);} }catch(e){}
+  try{const l10proj = document.getElementById('l10proj'); if(l10proj){ l10ProjMul = parseInt(l10proj.value,10)/100; localStorage.setItem('dino-l10proj', l10proj.value);} }catch(e){}
+  try{const am = document.getElementById('apexMode'); if(am) localStorage.setItem('dino-apex-mode', am.value);}catch(e){}
   // build LEVEL_CFG from BASE_LEVEL_CFG applying multipliers
   const diff=currentDifficulty;
   LEVEL_CFG=[null];
@@ -302,6 +316,8 @@ function applyDifficulty(){
   }
 }
 // initial build
+// restore saved L10 tuning and apex mode
+try{ const sv = localStorage.getItem('dino-l10hp'); if(sv) l10HpMul = parseInt(sv,10)/100; const sp = localStorage.getItem('dino-l10proj'); if(sp) l10ProjMul = parseInt(sp,10)/100; const am = localStorage.getItem('dino-apex-mode'); if(am) apexMode = am; }catch(e){}
 applyDifficulty();
 
 // ── STATE ──────────────────────────────────────────────────────────────────
@@ -910,17 +926,21 @@ function updateBoss(){
     boss.dyingTimer--;boss.dyingAlpha=clamp(boss.dyingTimer/80,0,1);
     if(boss.dyingTimer%14===0)explode(boss.x+rnd(-50,50),boss.y+rnd(-60,60),true);
     if(boss.dyingTimer<=0){
-      boss.dead=true;score+=50;if(score>best){best=score;localStorage.setItem('catblaster-best',best);} 
-      state='level_clear';
-      SFX.victory();
-      // special trophy for beating Level 10
-      if(level===MAX_LEVEL){
-        localStorage.setItem('dino-apex-beaten','1');
-        // celebratory particles and tone
-        for(let i=0;i<40;i++)explode(boss.x+rnd(-140,140),boss.y+rnd(-120,120),true);
-        if(!muted){[360,420,480,600,720].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.2,0.2),i*140));}
-      }
-    }
+          boss.dead=true;score+=50;if(score>best){best=score;localStorage.setItem('catblaster-best',best);} 
+          state='level_clear';
+          SFX.victory();
+          // special trophy for beating Level 10
+          if(level===MAX_LEVEL){
+            try{
+              const prev = parseInt(localStorage.getItem('dino-apex-beaten-count')||'0',10)||0;
+              localStorage.setItem('dino-apex-beaten-count',(prev+1).toString());
+              localStorage.setItem('dino-apex-beaten','1');
+            }catch(e){}
+            // celebratory particles and audio (use file if present)
+            for(let i=0;i<40;i++)explode(boss.x+rnd(-140,140),boss.y+rnd(-120,120),true);
+            tryPlayAudio('audioApex', ()=>{ if(!muted){[360,420,480,600,720].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.2,0.2),i*140));}});
+          }
+        }
     return;
   }
   if(boss.state==='entering'){boss.x-=3.5;if(boss.x<=boss.targetX){boss.x=boss.targetX;boss.state='fighting';}return;}
@@ -1134,9 +1154,10 @@ function update(){
                       // increase lives up to MAX_LIVES
                       const prevLives = lives;
                       lives = Math.min(MAX_LIVES, (lives||0) + 1);
-                      SFX.lifePickup();
-                      // HUD pulse
-                      lifePulse = 48;
+                                            // play audio file if available, otherwise fallback to synth
+                                            tryPlayAudio('audioLife', SFX.lifePickup);
+                                            // HUD pulse
+                                            lifePulse = 48;
                       for(let k=0;k<28;k++){const a=rnd(0,Math.PI*2),s=rnd(3,11);particles.push({x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,c:'#ff6b6b',r:rnd(2,8)});} 
                     } else {
                       gunLevel=Math.min(4,gunLevel+1);gunTimer=GUN_DURATION;SFX.pickup();
@@ -1262,15 +1283,18 @@ function loop(ts){
         // goto level
         const _gotoLevel = document.getElementById('gotoLevel'); const _levelSelect = document.getElementById('levelSelect');
         if(_gotoLevel && _levelSelect){
-          _gotoLevel.addEventListener('click', ()=>{ const v = parseInt(_levelSelect.value||'1',10); level = Math.max(1,Math.min(MAX_LEVEL,v)); initGame(false); state='playing'; });
-          _gotoLevel.addEventListener('touchstart', ()=>{ const v = parseInt(_levelSelect.value||'1',10); level = Math.max(1,Math.min(MAX_LEVEL,v)); initGame(false); state='playing'; },{passive:false});
+          _gotoLevel.addEventListener('click', ()=>{ const v = parseInt(_levelSelect.value||'1',10); level = Math.max(1,Math.min(MAX_LEVEL,v)); applyDifficulty(); initGame(false); state='playing'; });
+          _gotoLevel.addEventListener('touchstart', ()=>{ const v = parseInt(_levelSelect.value||'1',10); level = Math.max(1,Math.min(MAX_LEVEL,v)); applyDifficulty(); initGame(false); state='playing'; },{passive:false});
         }
 
         // live apply appearance and breath controls
         try{
-          const app = document.getElementById('appearance'); if(app) app.addEventListener('change', e=>{appearance=e.target.value;});
-          const bv = document.getElementById('breathVol'); if(bv) bv.addEventListener('input', e=>{breathVolume = parseInt(e.target.value,10)/100;});
-          const bs = document.getElementById('breathSpeed'); if(bs) bs.addEventListener('input', e=>{breathSpeed = parseInt(e.target.value,10);});
+          const app = document.getElementById('appearance'); if(app){ app.addEventListener('change', e=>{appearance=e.target.value;}); app.value = appearance; }
+          const bv = document.getElementById('breathVol'); if(bv){ bv.addEventListener('input', e=>{breathVolume = parseInt(e.target.value,10)/100;}); bv.value = Math.round(breathVolume*100); }
+          const bs = document.getElementById('breathSpeed'); if(bs){ bs.addEventListener('input', e=>{breathSpeed = parseInt(e.target.value,10);}); bs.value = breathSpeed; }
+          const hp = document.getElementById('l10hp'); if(hp){ hp.addEventListener('input', e=>{ l10HpMul = parseInt(e.target.value,10)/100; }); hp.value = Math.round(l10HpMul*100); }
+          const lp = document.getElementById('l10proj'); if(lp){ lp.addEventListener('input', e=>{ l10ProjMul = parseInt(e.target.value,10)/100; }); lp.value = Math.round(l10ProjMul*100); }
+          const am = document.getElementById('apexMode'); if(am){ am.addEventListener('change', e=>{apexMode = e.target.value;}); am.value = apexMode; }
           const ls = document.getElementById('levelSelect'); if(ls) ls.addEventListener('change', e=>{/* no-op, use Go */});
         }catch(e){}
 
