@@ -110,29 +110,24 @@
           </select>
           <button id="gotoLevel" style="margin-left:8px;padding:6px 8px;border-radius:8px;background:#ffd166;color:#0b0a1e;border:none;font-weight:700;">Go</button>
         </label>
+        <!-- Level10 tuning sliders -->
         <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
-            Apex mode:
-            <select id="apexMode" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
-              <option value="normal">Normal</option>
-              <option value="easier">Easier</option>
-              <option value="superhard" selected>Super Hard</option>
-            </select>
-          </label>
-          <!-- Level10 tuning sliders -->
-          <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
-            L10 HP x
-            <input id="l10hp" type="range" min="50" max="200" value="125" style="width:100px;margin-left:8px;" />
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
-            L10 Proj x
-            <input id="l10proj" type="range" min="50" max="180" value="100" style="width:100px;margin-left:8px;" />
-          </label>
-          <!-- optional external audio files (place in mathkids/audio/). If missing, tones are used -->
-          <audio id="audioLife" src="audio/life-pickup.mp3" preload="auto"></audio>
-          <audio id="audioApex" src="audio/apex-theme.mp3" preload="auto"></audio>
+          L10 HP x
+          <input id="l10hp" type="range" min="50" max="200" value="125" style="width:100px;margin-left:8px;" />
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+          L10 Proj x
+          <input id="l10proj" type="range" min="50" max="180" value="100" style="width:100px;margin-left:8px;" />
+        </label>
+        <!-- optional external audio files (place in mathkids/audio/). If missing, tones are used -->
+        <audio id="audioLife" src="audio/life-pickup.mp3" preload="auto"></audio>
+        <audio id="audioApex" src="audio/apex-theme.mp3" preload="auto"></audio>
         <button id="startBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#4cc9f0;color:#04202a;font-weight:700;">▶ Start</button>
         <button id="resetBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#f3722c;color:#0b0a1e;font-weight:700;">⟲ Reset</button>
         <button id="muteBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#fff;">🔊</button>
+        <!-- Export / Import settings -->
+        <button id="exportBtn" style="padding:8px 10px;border-radius:8px;background:#90be6d;color:#062;">Export</button>
+        <button id="importBtn" style="padding:8px 10px;border-radius:8px;background:#f9c74f;color:#062;">Import</button>
       </div>
 
     <div class="dpad">
@@ -1296,6 +1291,18 @@ function loop(ts){
           const lp = document.getElementById('l10proj'); if(lp){ lp.addEventListener('input', e=>{ l10ProjMul = parseInt(e.target.value,10)/100; }); lp.value = Math.round(l10ProjMul*100); }
           const am = document.getElementById('apexMode'); if(am){ am.addEventListener('change', e=>{apexMode = e.target.value;}); am.value = apexMode; }
           const ls = document.getElementById('levelSelect'); if(ls) ls.addEventListener('change', e=>{/* no-op, use Go */});
+          // export / import handlers
+          const exportBtn = document.getElementById('exportBtn'); const importBtn = document.getElementById('importBtn');
+          if(exportBtn){exportBtn.addEventListener('click', ()=>{
+            const data = {appearance,apexMode,l10HpMul:l10HpMul*100,l10ProjMul:l10ProjMul*100,breathVolume,breathSpeed,currentDifficulty,practiceMode};
+            const txt = JSON.stringify(data,null,2);
+            // open prompt with text to copy
+            prompt('Copy your settings JSON:', txt);
+          });}
+          if(importBtn){importBtn.addEventListener('click', ()=>{
+            const txt = prompt('Paste settings JSON to import:');
+            try{const data = JSON.parse(txt); if(data.appearance) appearance=data.appearance; if(data.apexMode) apexMode=data.apexMode; if(data.l10HpMul) l10HpMul = data.l10HpMul/100; if(data.l10ProjMul) l10ProjMul = data.l10ProjMul/100; if(typeof data.breathVolume!=='undefined') breathVolume = data.breathVolume; if(data.breathSpeed) breathSpeed = data.breathSpeed; if(data.currentDifficulty) currentDifficulty=data.currentDifficulty; if(typeof data.practiceMode!=='undefined') practiceMode=!!data.practiceMode; applyDifficulty(); alert('Settings imported'); }catch(e){alert('Invalid JSON');}
+          });}
         }catch(e){}
 
         // expose for inline onclick (Safari may require global function)
