@@ -42,6 +42,9 @@
           <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
         </select>
       </label>
+      <label style="margin-left:8px; font-weight:700">Nightmare:
+        <input id="nightmareToggle" type="checkbox" style="margin-left:8px;transform:scale(1.2)" />
+      </label>
 
       <label class="select roster">Player:
         <select id="playerSelect" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
@@ -197,6 +200,8 @@
       ball.vx += (dx/d) * impulse; ball.vy += (dy/d) * impulse;
       // add spin from horizontal aim offset (makes curve)
       ball.spin = ((aim.ax - (player.x+30)) / 120) * 0.18;
+      // trigger kick animation
+      player.kickAnim = 1.2;
       shots++; shotsEl.textContent = shots;
       playKick();
     }
@@ -205,8 +210,8 @@
     function checkGoal(){ if(ball.x + ball.r > goal.x && ball.x - ball.r < goal.x + goal.w){ if(ball.y > goal.y && ball.y < goal.y + goal.h) return true; } return false; }
 
     // Keeper AI: follows ball y with speed scaled by level
-    function updateKeeper(dt){ const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10))); const speedBase = keeper.baseSpeed + (level-1)*0.28; const speed = level===10 ? speedBase * 1.6 : speedBase; const dir = Math.sign(ball.y - keeper.y); keeper.vy = dir * speed; keeper.y += keeper.vy * dt; // small teleport chance at L10 when ball is close to goal
-      if(level===10 && ball.x > W-260 && Math.random() < 0.12){ keeper.y = ball.y; }
+    function updateKeeper(dt){ const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10))); const nightmare = !!document.getElementById('nightmareToggle').checked; const speedBase = keeper.baseSpeed + (level-1)*0.28; const speed = (level===10 || nightmare) ? speedBase * 1.6 : speedBase; const dir = Math.sign(ball.y - keeper.y); keeper.vy = dir * speed; keeper.y += keeper.vy * dt; // small teleport chance at L10 or nightmare when ball is close to goal
+      if((level===10 || nightmare) && ball.x > W-260 && Math.random() < 0.12){ keeper.y = ball.y; }
       keeper.y = Math.max(goal.y + 20, Math.min(goal.y + goal.h - 20, keeper.y)); }
 
     // Confetti helper (spawn on goal)
@@ -295,14 +300,17 @@
       ctx.fillStyle = '#d62828'; ctx.fillRect(12,8,24,14); ctx.fillStyle = '#06b873'; ctx.fillRect(12+24,8,24,14);
       ctx.fillStyle = '#fff9'; ctx.font = '14px sans-serif'; ctx.fillText('Portugal National Team', 12+52, 20);
 
-      // player (Portugal: red shirt, green shorts)
+      // player (Portugal: red shirt, green shorts) with simple kick animation
+      const ka = player.kickAnim || 0; const lean = ka * 6; // lean degrees
       // draw legs (green)
-      ctx.fillStyle = '#06b873'; ctx.beginPath(); ctx.ellipse(player.x, player.y + 10, player.r*0.6, player.r*0.4, 0, 0, Math.PI*2); ctx.fill();
+      ctx.save(); ctx.translate(player.x, player.y+10); ctx.rotate(-lean*0.01); ctx.fillStyle = '#06b873'; ctx.beginPath(); ctx.ellipse(0, 0, player.r*0.6, player.r*0.4, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
       // shirt (red)
-      ctx.fillStyle = '#d62828'; ctx.beginPath(); ctx.arc(player.x, player.y-2, player.r, Math.PI, 0); ctx.fill();
+      ctx.save(); ctx.translate(player.x, player.y-2); ctx.rotate(-lean*0.01); ctx.fillStyle = '#d62828'; ctx.beginPath(); ctx.arc(0, 0, player.r, Math.PI, 0); ctx.fill(); ctx.restore();
       // head
       ctx.fillStyle = '#f7e6d6'; ctx.beginPath(); ctx.arc(player.x, player.y-18, player.r*0.45, 0, Math.PI*2); ctx.fill();
       ctx.fillStyle = '#062'; ctx.fillRect(player.x-3, player.y-20, 6, 6);
+      // decay kickAnim
+      if(player.kickAnim && player.kickAnim>0) player.kickAnim = Math.max(0, player.kickAnim - 0.06);
 
       // ball (with a small marking)
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#0008'; ctx.stroke();
