@@ -110,7 +110,13 @@
       <div style="background:#071428;color:#fff;border-radius:12px;padding:14px;max-width:520px;width:94%;text-align:left;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
         <h3 style="margin-top:0;margin-bottom:8px">Achievements 🏅</h3>
         <div id="achList" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-        <div style="text-align:right;margin-top:10px"><button id="closeAch" style="padding:8px 12px;border-radius:8px;background:#4cc9f0;color:#062;border:none;font-weight:700">Close</button></div>
+        <div style="display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:10px">
+          <div style="font-size:0.9rem;opacity:0.9">Tip: You keep badges in this browser.</div>
+          <div></div>
+            <button id="resetAch" style="padding:8px 12px;border-radius:8px;background:#ff6666;color:#062;border:none;font-weight:700;margin-right:8px">Reset Achievements</button>
+            <button id="closeAch" style="padding:8px 12px;border-radius:8px;background:#4cc9f0;color:#062;border:none;font-weight:700">Close</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -383,10 +389,23 @@
 
     document.getElementById('showAchievements').addEventListener('click', ()=>{ loadAchievements(); document.getElementById('achModal').style.display='flex'; });
     document.getElementById('closeAch').addEventListener('click', ()=>{ document.getElementById('achModal').style.display='none'; });
+    document.getElementById('resetAch').addEventListener('click', ()=>{ if(confirm('Reset all achievements and counts?')){ localStorage.removeItem('soccer-badges'); localStorage.removeItem('soccer-goals'); localStorage.removeItem('soccer-total-goals'); updateCountsDisplay(); loadAchievements(); alert('Achievements reset'); document.getElementById('achModal').style.display='none'; }});
 
     // Main loop
     let last = performance.now();
     function loop(ts){ if(!running) return; const dt = Math.min(0.04, (ts-last)/1000); last = ts; step(dt); draw(); requestAnimationFrame(loop); }
+
+    // Tutorial overlay
+    (function(){ try{ const seen = localStorage.getItem('soccer-tutorial-seen'); if(!seen){ const t = document.createElement('div'); t.id='socTutorial'; t.style.cssText='position:fixed;inset:0;background:linear-gradient(rgba(0,0,0,0.6),rgba(0,0,0,0.6));display:flex;align-items:center;justify-content:center;z-index:10000'; t.innerHTML = `<div style="background:#071428;color:#fff;border-radius:12px;padding:18px;max-width:560px;width:92%;text-align:left;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
+        <h2 style="margin-top:0">How to play ⚽</h2>
+        <ol style="margin-left:18px;opacity:0.95">
+          <li>Drag on the field to aim and set power.</li>
+          <li>Press <strong>Shoot</strong> or press <strong>Space</strong>.</li>
+          <li>Use left/right to move the player.</li>
+          <li>Try higher levels and the <em>Nightmare</em> toggle for a harder keeper.</li>
+        </ol>
+        <div style="text-align:right;margin-top:12px"><button id="gotIt" style="padding:8px 12px;border-radius:8px;background:#4cc9f0;color:#062;border:none;font-weight:800">Got it!</button></div>
+      </div>`; document.body.appendChild(t); document.getElementById('gotIt').addEventListener('click', ()=>{ localStorage.setItem('soccer-tutorial-seen','1'); t.remove(); }); } }catch(e){} })();
 
     // Initialize
     resetGame(); draw();

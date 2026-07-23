@@ -296,6 +296,9 @@ for (let i = 0; i < 70; i++) {
     }
     if(englishKey && englishKey !== '0') addBadgeToLink('english-quiz.html', 'New!', 'english-new-questions');
     if(physicsKey && physicsKey !== '0') addBadgeToLink('physics-quiz.html', 'New!', 'physics-new-questions');
+    
+    // show soccer total goals if available
+    try{ const sg = localStorage.getItem('soccer-total-goals'); if(sg && parseInt(sg,10)>0){ addBadgeToLink('soccer-game.html', 'Goals: '+sg, 'soccer-total-goals'); } }catch(e){}
   }catch(e){}
 })();
 </script>
