@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+</head>  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title></title>English Quiz 📚</title>
+  <style>
+</style>    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Segoe UI,Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#071428,#193047);color:#fff;padding:18px}
+    .card{width:100%;max-width:820px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border-radius:14px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    h1{font-size:1.4rem;margin-bottom:6px;color:#ffd166}
+    p.lead{opacity:0.9;margin-bottom:12px}
+    .top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .timer{font-weight:800;color:#ff6b6b}
+    .qwrap{margin-top:16px}
+    .question{font-size:1.2rem;margin-bottom:12px}
+    .choices{display:grid;grid-template-columns:1fr;gap:10px}
+    @media(min-width:560px){.choices{grid-template-columns:1fr 1fr}}
+    .choice{background:rgba(255,255,255,0.04);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;font-weight:700}
+    .choice.correct{background:linear-gradient(90deg,#90ee90,#4cc9f0);color:#062}
+    .choice.wrong{background:linear-gradient(90deg,#ff9f9f,#ffb3b3);color:#600}
+    .controls{display:flex;gap:8px;margin-top:14px;align-items:center}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+    .btn.next{background:#4cc9f0;color:#062}
+    .btn.restart{background:#ffd166;color:#062}
+    .score{margin-left:auto;font-weight:800;color:#f9c74f}
+    .meta{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap}
+    .meta div{opacity:0.9}
+    footer{margin-top:14px;text-align:center;opacity:0.8}
+    a.link{color:#ffd166;text-decoration:none;font-weight:700}
+  </style>
+</head>
+<body></body>
+  <div class="card">
+    <div class="top">
+      <div>
+</div>        <h1></h1>English Quiz 📚</h1>
+        <p class="lead">Short questions for school: vocabulary, grammar, and spelling. 20 seconds per question.</p>
+      </div>
+      <div style="text-align:right">
+        <div class="timer">Time: <span id="timer">20</span>s</div>
+        <div class="score">Score: <span id="score">0</span></div>
+      </div>
+    </div>
+
+    <div class="qwrap">
+      <div class="question" id="question">Ready?</div>
+      <div class="choices" id="choices"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn next" id="btn-next">Next ▶</button>
+      <button class="btn restart" id="btn-restart">Restart ⟲</button>
+      <div style="margin-left:auto" id="feedback"></div>
+    </div>
+
+    <div class="meta">
+      <div></div>Streak: <span id="streak">0</span></div>
+      <div></div>Best: <span id="best">0</span></div>
+      <div><a class="link" href="index.html">🏠 Home</a></div>
+    </div>
+    <footer></footer>Made for kids — be kind and have fun! 😊</footer>
+  </div>
+
+<script>
+</script>// English quiz — simple single-choice, 20s timer
+const QUIZ=[
+  {q:'Which word is a noun?', c:['Run','Happy','Dog','Quick'], a:2},
+  {q:'Choose the correct past form of "go".', c:['goed','went','gone','goes'], a:1},
+  {q:'Which is a synonym of "big"?', c:['tiny','large','small','slim'], a:1},
+  {q:'Pick the correct spelling.', c:['recieve','receive','recive','receeve'], a:1},
+  {q:'Which word is an adjective?', c:['cat','blue','swim','school'], a:1},
+  {q:'Choose the right article: ___ apple', c:['a','an','the','no article'], a:1},
+  {q:'Which sentence is correct?', c:['He dont like it.','He doesn\'t like it.','He no like it.','He aren\'t like it.'], a:1},
+  {q:'Which is a question word?', c:['When','Because','And','But'], a:0},
+  {q:'Choose opposite of "hot".', c:['cold','warm','boil','heat'], a:0},
+  {q:'Which is a verb?', c:['apple','run','green','three'], a:1},
+  {q:'Which is correct plural?', c:['childs','children','childes','child'], a:1},
+  {q:'Choose the correct form: She ___ to school.', c:['go','goes','gone','going'], a:1},
+  {q:'Which word rhymes with "cat"?', c:['dog','bat','book','pen'], a:1},
+  {q:'Pick the correct preposition: He is ___ the box.', c:['in','on','at','underneathss'], a:0},
+  {q:'Which is a pronoun?', c:['he','table','apple','run'], a:0}
+];
+
+let idx=0,score=0,streak=0,best=0,timer=20,tid=null,locked=false;
+const timerEl=document.getElementById('timer');
+const qEl=document.getElementById('question');
+const choicesEl=document.getElementById('choices');
+const scoreEl=document.getElementById('score');
+const streakEl=document.getElementById('streak');
+const bestEl=document.getElementById('best');
+const feedbackEl=document.getElementById('feedback');
+
+// shuffle copy for session
+let questions = shuffle(QUIZ.slice());
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a}
+
+function loadBest(){best = parseInt(localStorage.getItem('english-best')||'0',10); bestEl.textContent=best}
+loadBest();
+
+function startTimer(){timer=20; timerEl.textContent=timer; if(tid)clearInterval(tid); tid=setInterval(()=>{timer--; timerEl.textContent=timer; if(timer<=0){clearInterval(tid); onTimeUp();}},1000);} 
+
+function onTimeUp(){ if(locked) return; locked=true; feedback('Time!','wrong'); revealAnswer(null); setTimeout(nextQuestion,900);} 
+
+function showQuestion(){locked=false; feedbackEl.textContent=''; const q=questions[idx]; qEl.textContent=(idx+1)+'. '+q.q; choicesEl.innerHTML=''; q.c.forEach((txt,i)=>{const b=document.createElement('button'); b.className='choice'; b.textContent=txt; b.onclick=()=>choose(i,b); choicesEl.appendChild(b);}); startTimer();}
+
+function choose(i,but){ if(locked) return; locked=true; clearInterval(tid); const q=questions[idx]; if(i===q.a){ but.classList.add('correct'); score+=10; streak++; feedback('Good! +10','ok'); SFX.pickup(); } else { but.classList.add('wrong'); feedback('Nope','wrong'); revealAnswer(i);} scoreEl.textContent=score; streakEl.textContent=streak; if(score>best){best=score; localStorage.setItem('english-best',best); bestEl.textContent=best;} setTimeout(nextQuestion,900); }
+
+function revealAnswer(userIdx){ const q=questions[idx]; const buttons = choicesEl.querySelectorAll('.choice'); buttons.forEach((b,i)=>{ if(i===q.a) b.classList.add('correct'); }); streak = userIdx===q.a?streak:0; streakEl.textContent=streak; }
+
+function nextQuestion(){ idx++; if(idx>=questions.length){ finish(); return; } showQuestion(); }
+
+function finish(){ qEl.textContent='Quiz finished!'; choicesEl.innerHTML=''; feedback('You scored '+score,''); clearInterval(tid); locked=true; }
+
+function restart(){ questions = shuffle(QUIZ.slice()); idx=0; score=0; streak=0; scoreEl.textContent=score; streakEl.textContent=streak; loadBest(); showQuestion(); }
+
+function feedback(msg,cls){ feedbackEl.textContent=msg; }
+
+// SFX simple
+function tone(f,type,dur,vol){try{const ac = new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(); const g=ac.createGain(); o.type=type; o.frequency.value=f; g.gain.setValueAtTime(vol||0.12, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); setTimeout(()=>{try{ac.close()}catch(e){}},(dur+0.05)*1000);}catch(e){}}
+const SFX={ pickup:()=>tone(520,'sine',0.08,0.12), }
+
+// controls
+document.getElementById('btn-next').addEventListener('click', ()=>{ if(!locked){ clearInterval(tid); onTimeUp(); } else { nextQuestion(); }});
+document.getElementById('btn-restart').addEventListener('click', restart);
+
+// start on load
+restart();
+</script>
+</body>
+</html>
