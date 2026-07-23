@@ -272,6 +272,7 @@ applyDifficulty();
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 let state,score,best,lives,frame,level,killCount;
+const MAX_LIVES = 5;
 let shakeX=0,shakeY=0,shakePow=0,screenFlash=0,recoil=0;
 let mFlash=0,mFlashX=0,mFlashY=0;
 let bullets=[],enemies=[],particles=[],casings=[],bossProjectiles=[],powerups=[];
@@ -643,7 +644,9 @@ function drawPowerup(p){
   ctx.fillStyle='#d4a020';ctx.fillRect(-20,-4,40,8);ctx.fillRect(-5,-16,10,32);
   ctx.fillStyle='#f0c030';
   [[-15,-11],[11,-11],[-15,9],[11,9]].forEach(([rx,ry])=>{ctx.beginPath();ctx.arc(rx,ry,3,0,Math.PI*2);ctx.fill();});
-  ctx.fillStyle='#ffee00';ctx.font='bold 18px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('⚡',0,0);
+  ctx.fillStyle = p.type==='life' ? '#ff6b6b' : '#ffee00';
+  ctx.font='bold 18px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(p.type==='life' ? '❤️' : '⚡',0,0);
   ctx.restore();
 }
 
@@ -676,7 +679,7 @@ function drawHUD(){
   ctx.fillText('LVL '+level,W/2,22);
   ctx.textAlign='right';ctx.fillStyle='#90be6d';ctx.fillText('Best: '+best,W-80,22);
   ctx.font='20px serif';let hs='';
-  for(let i=0;i<3;i++)hs+=i<lives?'❤️':'🖤';
+  for(let i=0;i<MAX_LIVES;i++) hs += i<lives ? '❤️' : '🖤';
   ctx.fillText(hs,W-8,18);
   // Gun level bar
   if(gunLevel>1||gunTimer>0){
@@ -772,7 +775,10 @@ function shoot(){
   SFX.shoot();
 }
 
-function spawnPowerup(x,y){powerups.push({x,y:clamp(y,80,GROUND_Y-40),vx:-1.8,bobPhase:Math.random()*Math.PI*2,life:1,collected:false,collectAnim:0});}
+function spawnPowerup(x,y,type){
+  const t = type || 'gun';
+  powerups.push({x,y:clamp(y,80,GROUND_Y-40),vx:-1.8,bobPhase:Math.random()*Math.PI*2,life:1,collected:false,collectAnim:0,type:t});
+}
 
 function spawnEnemy(){
   if(boss||bossWarningTimer>0||enemies.length>=22)return; // allow more on higher levels
@@ -1019,10 +1025,12 @@ function update(){
             const dmg = cfg.dmg || (b.lvl>=3?2:1);
             bullets.splice(j,1);e.hp-=dmg;e.hit=8;
             if(e.hp<=0){explode(e.x,e.y,e.kind==='rat');score+=e.pts;killCount++;enemies.splice(i,1);SFX.hit();
-              if(Math.random()<(e.kind==='rat'?.55:.22))spawnPowerup(e.x,e.y);
-              const bk=LEVEL_CFG[level].killsForBoss;
-              if(killCount>=bk&&!boss&&bossWarningTimer===0){enemies=[];bossWarningTimer=150;warnBossName=LEVEL_CFG[level].bossName;}
-            }
+                          // spawn a life booster sometimes on level 5
+                          if(level===5 && Math.random()<0.22){ spawnPowerup(e.x,e.y,'life'); }
+                          else if(Math.random()<(e.kind==='rat'?.55:.22)) spawnPowerup(e.x,e.y,'gun');
+                          const bk=LEVEL_CFG[level].killsForBoss;
+                          if(killCount>=bk&&!boss&&bossWarningTimer===0){enemies=[];bossWarningTimer=150;warnBossName=LEVEL_CFG[level].bossName;}
+                        }
             break;
           }
         }
@@ -1057,15 +1065,22 @@ function update(){
   for(let i=powerups.length-1;i>=0;i--){
     const p=powerups[i];
     if(!p.collected){
-      p.x+=p.vx;if(p.x<-40){powerups.splice(i,1);continue;}
-      const dx=p.x-cat.x,dy=(p.y+Math.sin(frame*.09+p.bobPhase)*8)-cat.y;
-      if(Math.abs(dx)<55&&Math.abs(dy)<55){
-        p.collected=true;gunLevel=Math.min(4,gunLevel+1);gunTimer=GUN_DURATION;SFX.pickup();shakePow=8;
-        // mouth happy animation
-        cat.mouthTimer = Math.max(cat.mouthTimer, 14);
-        for(let k=0;k<16;k++){const a=rnd(0,Math.PI*2),s=rnd(2,7);particles.push({x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,c:'#f9c74f',r:rnd(2,5)});} 
-      }
-    }else{p.collectAnim+=0.12;p.life-=0.09;if(p.life<=0){powerups.splice(i,1);continue;}}
+          p.x+=p.vx;if(p.x<-40){powerups.splice(i,1);continue;}
+          const dx=p.x-cat.x,dy=(p.y+Math.sin(frame*.09+p.bobPhase)*8)-cat.y;
+          if(Math.abs(dx)<55&&Math.abs(dy)<55){
+            p.collected=true;shakePow=8;cat.mouthTimer = Math.max(cat.mouthTimer, 14);
+            // effect depends on powerup type
+            if(p.type==='life'){
+              // increase lives up to MAX_LIVES
+              lives = Math.min(MAX_LIVES, (lives||0) + 1);
+              SFX.pickup();
+              for(let k=0;k<22;k++){const a=rnd(0,Math.PI*2),s=rnd(2,9);particles.push({x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,c:'#ff6b6b',r:rnd(2,6)});} 
+            } else {
+              gunLevel=Math.min(4,gunLevel+1);gunTimer=GUN_DURATION;SFX.pickup();
+              for(let k=0;k<16;k++){const a=rnd(0,Math.PI*2),s=rnd(2,7);particles.push({x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,c:'#f9c74f',r:rnd(2,5)});} 
+            }
+          }
+        }else{p.collectAnim+=0.12;p.life-=0.09;if(p.life<=0){powerups.splice(i,1);continue;}}
   }
 
   // hard caps
