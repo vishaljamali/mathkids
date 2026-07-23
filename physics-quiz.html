@@ -99,7 +99,23 @@ const QUIZ=[
   {q:'What happens to energy when you stop a moving toy?', c:['It disappears','It becomes heat','It becomes a color','It turns to sound only'], a:1, explain:'Energy is conserved; some becomes heat (and sound).', topic:'energy'},
   {q:'Which surface gives more friction: ice or sandpaper?', c:['Ice','Sandpaper','Both same','None'], a:1, explain:'Sandpaper has more friction than ice.', topic:'forces'},
   {q:'Speed is distance divided by what?', c:['Time','Mass','Area','Volume'], a:0, explain:'Speed = distance / time.', topic:'motion'},
-  {q:'Which energy is stored in a stretched rubber band?', c:['Kinetic','Thermal','Elastic potential','Chemical'], a:2, explain:'A stretched band stores elastic potential energy.', topic:'energy'}
+  {q:'Which energy is stored in a stretched rubber band?', c:['Kinetic','Thermal','Elastic potential','Chemical'], a:2, explain:'A stretched band stores elastic potential energy.', topic:'energy'},
+  // Added questions (15 new)
+  {q:'What makes a car slow down when you press the brakes?', c:['Friction','Color','Speed','Sound'], a:0, explain:'Brakes make friction with the wheels so the car slows down.', topic:'forces'},
+  {q:'Which tool do you use to measure weight?', c:['Scale','Ruler','Thermometer','Clock'], a:0, explain:'A scale measures weight.', topic:'forces'},
+  {q:'If you push a swing and then stop, what happens after a while?', c:['It keeps going forever','It slows down and stops','It grows bigger','It turns into a car'], a:1, explain:'Friction and air make the swing slow down until it stops.', topic:'motion'},
+  {q:'What do we call energy of moving things?', c:['Potential energy','Kinetic energy','Light energy','Sound energy'], a:1, explain:'Energy of motion is called kinetic energy.', topic:'energy'},
+  {q:'If you lift a book higher, its potential energy will...', c:['Decrease','Increase','Stay same','Change color'], a:1, explain:'Higher position gives more potential energy.', topic:'energy'},
+  {q:'Which has stronger gravity: Earth or the Moon?', c:['Earth','Moon','Both same','Neither'], a:0, explain:'Earth is bigger so its gravity is stronger.', topic:'forces'},
+  {q:'What happens to mass if you cut an apple in half?', c:['Mass doubles','Mass halves','Mass stays same','Mass disappears'], a:1, explain:'Mass becomes smaller when you cut it into smaller pieces.', topic:'forces'},
+  {q:'What keeps the planets moving around the sun?', c:['Magnetism','Gravity','Wind','Sound'], a:1, explain:'Gravity from the sun keeps planets in orbit.', topic:'forces'},
+  {q:'What is the speed if you go 100 meters in 20 seconds?', c:['2 m/s','5 m/s','20 m/s','100 m/s'], a:1, explain:'Speed = distance / time → 100 / 20 = 5 m/s.', topic:'motion'},
+  {q:'Which force makes a magnet stick to metal?', c:['Friction','Magnetism','Gravity','Electricity'], a:1, explain:'Magnets use magnetic force to pull some metals.', topic:'forces'},
+  {q:'Does sound travel faster in air or in water?', c:['Air','Water','Both same','Depends on color'], a:1, explain:'Sound travels faster in water than in air.', topic:'motion'},
+  {q:'Which is a simple machine?', c:['Lever','Phone','Computer','Table'], a:0, explain:'A lever helps us lift or move things with less effort.', topic:'forces'},
+  {q:'What does a compass show?', c:['Speed','North direction','Weight','Temperature'], a:1, explain:'A compass points to the north (direction).', topic:'motion'},
+  {q:'Which energy is stored in food?', c:['Chemical energy','Light energy','Sound energy','Heat energy'], a:0, explain:'Food stores chemical energy our bodies use.', topic:'energy'},
+  {q:'What is the unit we often use for energy?', c:['Newton','Joule','Meter','Second'], a:1, explain:'Energy is measured in Joules (J).', topic:'energy'}
 ];
 
 let idx=0, score=0, streak=0, best=0, locked=false;
@@ -154,16 +170,61 @@ document.getElementById('readBtn').addEventListener('click', ()=>{ const q=quest
 document.getElementById('btn-next').addEventListener('click', ()=>{ if(!locked){ revealAnswer(); locked=true; setTimeout(()=>{ idx++; if(idx>=questions.length) finish(); else showQuestion(); },800);} else { idx++; if(idx>=questions.length) finish(); else showQuestion(); }});
 document.getElementById('btn-restart').addEventListener('click', restart);
 
-// export / import settings and badges
-try{
-  const exportBtn = document.getElementById('exportBtn'); const importBtn = document.getElementById('importBtn'); const showBadgesBtn = document.getElementById('showBadges');
-  if(exportBtn) exportBtn.addEventListener('click', ()=>{ const data = {topic:document.getElementById('topic').value}; prompt('Copy settings JSON', JSON.stringify(data,null,2)); });
-  if(importBtn) importBtn.addEventListener('click', ()=>{ const txt = prompt('Paste settings JSON to import:'); try{ const d = JSON.parse(txt); if(d.topic) document.getElementById('topic').value=d.topic; buildQuestions(); alert('Imported'); }catch(e){alert('Invalid JSON');}});
-  if(showBadgesBtn) showBadgesBtn.addEventListener('click', showPBadges);
-}catch(e){}
+// export / import quiz questions and badges
+    try{
+      const exportBtn = document.getElementById('exportBtn');
+      const importBtn = document.getElementById('importBtn');
+      const showBadgesBtn = document.getElementById('showBadges');
 
-// start
-buildQuestions(); restart();
+      if (exportBtn) exportBtn.addEventListener('click', ()=>{
+        const top = document.getElementById('topic').value;
+        const data = { source: 'physics-quiz', topic: top, questions: QUIZ.filter(q => top==='all' || q.topic===top) };
+        prompt('Copy quiz JSON', JSON.stringify(data, null, 2));
+      });
+
+      if (importBtn) importBtn.addEventListener('click', ()=>{
+              const txt = prompt('Paste quiz JSON to import:');
+              try{
+                const d = JSON.parse(txt);
+                if(!d.questions || !Array.isArray(d.questions)) throw new Error('no questions');
+                let count = 0;
+                // prepend so imported questions show first
+                for(let i=d.questions.length-1;i>=0;i--){
+                  const q = d.questions[i];
+                  if(q && q.q && Array.isArray(q.c) && typeof q.a === 'number'){
+                    QUIZ.unshift(q); count++;
+                  }
+                }
+                if(count>0){
+                  alert('Imported ' + count + ' questions');
+                  localStorage.setItem('physics-new-questions','1');
+                  buildQuestions();
+                } else alert('No valid questions found');
+              }catch(e){ alert('Invalid JSON'); }
+            });
+
+      if (showBadgesBtn) showBadgesBtn.addEventListener('click', showPBadges);
+    }catch(e){}
+
+    // show new-questions badge (dismissible)
+    (function(){
+      const key = 'physics-new-questions';
+      try{ if(localStorage.getItem(key) !== '0'){
+        const b = document.createElement('div');
+        b.id = 'newQBadge';
+        b.style.cssText = 'background:linear-gradient(90deg,#ffd166,#90be6d);color:#062;padding:8px 12px;border-radius:10px;display:inline-block;font-weight:800;margin-bottom:10px;cursor:default';
+        b.innerHTML = '🎉 New questions added! <button id="dismissNewP" style="margin-left:8px;padding:6px 8px;border-radius:8px;border:none;cursor:pointer;font-weight:700;background:#4cc9f0;color:#062">Got it</button>';
+        const container = document.querySelector('.top > div');
+        if(container) container.insertBefore(b, container.firstChild);
+        const btn = document.getElementById('dismissNewP'); if(btn) btn.addEventListener('click', ()=>{ localStorage.setItem(key,'0'); b.remove(); });
+      }}catch(e){}
+    })();
+
+    // mark there are new questions so users see the badge once
+    try{ localStorage.setItem('physics-new-questions','1'); }catch(e){}
+
+    // start
+    buildQuestions(); restart();
 </script>
 </body>
 </html>

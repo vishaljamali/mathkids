@@ -169,16 +169,21 @@
     function shoot(){ if(!running) { running = true; loop(); }
       const dx = aim.ax - ball.x, dy = aim.ay - ball.y; const d = Math.hypot(dx,dy) || 1;
       const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10)));
-      // power: distance dragged scaled by level
+      // power: distance dragged scaled by level (stronger scaling per your request)
       const drag = Math.min(220, d);
       const powerBase = 0.8 + (drag/220) * 1.6; // 0.8..2.4
-      const power = powerBase * (1 + (level-1)*0.12); // increase modestly by level
-      const impulse = power * 5.2;
+      const power = powerBase * (1 + (level-1)*0.14); // increase by level, slightly stronger
+
+      // player-specific power modifiers (real players)
+      const pid = parseInt(playerSelect.value||'1',10);
+      const PLAYER_POWER = {1:1.18,2:1.05,3:1.04,4:1.06,5:0.95,6:0.98,7:1.03,8:1.02,9:1.00,10:1.00};
+      const pmod = PLAYER_POWER[pid] || 1.0;
+
+      const impulse = power * 5.2 * pmod;
       // apply impulse
       ball.vx += (dx/d) * impulse; ball.vy += (dy/d) * impulse;
-      // add spin from perpendicular drag (makes curve)
-      const perp = (dx * dy) ? ( (dx/d) * (dy/d) ) : 0; // small value
-      ball.spin = ((aim.ax - (player.x+30)) / 120) * 0.18; // spin depends on horizontal aim offset
+      // add spin from horizontal aim offset (makes curve)
+      ball.spin = ((aim.ax - (player.x+30)) / 120) * 0.18;
       shots++; shotsEl.textContent = shots;
       playKick();
     }
@@ -187,7 +192,7 @@
     function checkGoal(){ if(ball.x + ball.r > goal.x && ball.x - ball.r < goal.x + goal.w){ if(ball.y > goal.y && ball.y < goal.y + goal.h) return true; } return false; }
 
     // Keeper AI: follows ball y with speed scaled by level
-    function updateKeeper(dt){ const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10))); const speed = keeper.baseSpeed + (level-1)*0.22; const dir = Math.sign(ball.y - keeper.y); keeper.vy = dir * speed; keeper.y += keeper.vy * dt; keeper.y = Math.max(goal.y + 20, Math.min(goal.y + goal.h - 20, keeper.y)); }
+    function updateKeeper(dt){ const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10))); const speed = keeper.baseSpeed + (level-1)*0.28; const dir = Math.sign(ball.y - keeper.y); keeper.vy = dir * speed; keeper.y += keeper.vy * dt; keeper.y = Math.max(goal.y + 20, Math.min(goal.y + goal.h - 20, keeper.y)); }
 
     // Confetti helper (spawn on goal)
     function spawnConfetti(){ for(let i=0;i<60;i++){ confetti.push({x:goal.x + goal.w/2 + (Math.random()*160-80), y:goal.y + Math.random()*goal.h, vx:(Math.random()*6-3), vy:(Math.random()*-6-1), r:Math.random()*4+2, c:['#ffd166','#4cc9f0','#d62828','#06b873'][Math.floor(Math.random()*4)], life:1}); } }

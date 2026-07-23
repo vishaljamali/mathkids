@@ -1,17 +1,16 @@
 <!doctype html>
 <html lang="en">
 <head>
-</head>  <meta charset="utf-8" />
+  <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title></title>English Quiz 📚</title>
+  <title>English Quiz 📚</title>
   <style>
-</style>    *{box-sizing:border-box;margin:0;padding:0}
+    *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:Segoe UI,Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#071428,#193047);color:#fff;padding:18px}
-    .card{width:100%;max-width:820px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border-radius:14px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
-    h1{font-size:1.4rem;margin-bottom:6px;color:#ffd166}
+    .card{width:100%;max-width:900px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border-radius:14px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    h1{font-size:1.6rem;margin-bottom:6px;color:#ffd166}
     p.lead{opacity:0.9;margin-bottom:12px}
     .top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .timer{font-weight:800;color:#ff6b6b}
     .qwrap{margin-top:16px}
     .question{font-size:1.2rem;margin-bottom:12px}
     .choices{display:grid;grid-template-columns:1fr;gap:10px}
@@ -23,48 +22,45 @@
     .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
     .btn.next{background:#4cc9f0;color:#062}
     .btn.restart{background:#ffd166;color:#062}
-    .score{margin-left:auto;font-weight:800;color:#f9c74f}
     .meta{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap}
-    .meta div{opacity:0.9}
     footer{margin-top:14px;text-align:center;opacity:0.8}
     a.link{color:#ffd166;text-decoration:none;font-weight:700}
   </style>
 </head>
-<body></body>
+<body>
   <div class="card">
     <div class="top">
-        <div>
-          <h1>English Quiz 📚</h1>
-          <p class="lead">Short questions for school: vocabulary, grammar, and spelling. 20 seconds per question.</p>
-          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <label style="font-weight:700">Category:
-              <select id="category" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
-                <option value="all">All</option>
-                <option value="vocab">Vocabulary</option>
-                <option value="grammar">Grammar</option>
-                <option value="spelling">Spelling</option>
-              </select>
-            </label>
-            <label style="font-weight:700">Difficulty:
-              <select id="difficulty" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
-                <option value="easy">Easy</option>
-                <option value="normal" selected>Normal</option>
-                <option value="hard">Hard</option>
-              </select>
-            </label>
-            <button id="readBtn" class="btn" style="background:#ffd166;color:#062;">🔊 Read Aloud</button>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div class="timer">Time: <span id="timer">20</span>s</div>
-          <div class="score">Score: <span id="score">0</span></div>
+      <div>
+        <h1>English Quiz 📚</h1>
+        <p class="lead">Practice vocabulary, grammar and spelling. Self‑paced — press Next when ready.</p>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <label style="font-weight:700">Category:
+            <select id="category" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+              <option value="all">All</option>
+              <option value="vocab">Vocabulary</option>
+              <option value="grammar">Grammar</option>
+              <option value="spelling">Spelling</option>
+            </select>
+          </label>
+          <label style="font-weight:700">Difficulty:
+            <select id="difficulty" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+              <option value="easy">Easy</option>
+              <option value="normal" selected>Normal</option>
+              <option value="hard">Hard</option>
+            </select>
+          </label>
+          <button id="readBtn" class="btn" style="background:#ffd166;color:#062;">🔊 Read Aloud</button>
         </div>
       </div>
+      <div style="text-align:right">
+        <div class="score">Score: <span id="score">0</span></div>
+      </div>
+    </div>
 
     <div class="qwrap">
       <div class="question" id="question">Ready?</div>
       <div class="choices" id="choices"></div>
-      <div id="explain" style="margin-top:10px;opacity:0.9;font-size:0.95rem;min-height:28px"></div>
+      <div id="explain" style="margin-top:10px;opacity:0.95;font-size:0.95rem;min-height:32px"></div>
       <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
         <div style="flex:1;background:rgba(255,255,255,0.06);height:12px;border-radius:8px;overflow:hidden"><div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#4cc9f0,#90be6d)"></div></div>
         <div style="min-width:72px;text-align:right;font-weight:700" id="progressText">0/0</div>
@@ -74,6 +70,9 @@
     <div class="controls">
       <button class="btn next" id="btn-next">Next ▶</button>
       <button class="btn restart" id="btn-restart">Restart ⟲</button>
+      <button class="btn" id="exportBtn" style="background:#90be6d;color:#062;margin-left:10px">Export</button>
+      <button class="btn" id="importBtn" style="background:#ffd166;color:#062">Import</button>
+      <button class="btn" id="showBadges" style="background:#4cc9f0;color:#062">Badges</button>
       <div style="margin-left:auto" id="feedback"></div>
     </div>
 
@@ -87,33 +86,75 @@
 
   <canvas id="confetti" style="position:fixed;left:0;top:0;pointer-events:none;z-index:9999"></canvas>
 
+  <!-- Badges modal -->
+  <div id="badgeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:9999;">
+    <div style="background:#071428;color:#fff;border-radius:12px;padding:18px;max-width:520px;width:94%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
+      <h2 style="margin-bottom:8px;">Your Badges</h2>
+      <div id="badgeList" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button id="closeBadges" style="padding:8px 12px;border-radius:8px;background:#4cc9f0;color:#062;border:none;font-weight:700;">Close</button>
+        <button id="shareBadges" style="padding:8px 12px;border-radius:8px;background:#ffd166;color:#062;border:none;font-weight:700;">Share</button>
+        <button id="resetBadges" style="padding:8px 12px;border-radius:8px;background:#ff6666;color:#062;border:none;font-weight:700;">Reset</button>
+      </div>
+    </div>
+  </div>
+
 <script>
-</script>// English quiz — simple single-choice, 20s timer
+// English quiz — multiple-choice, self-paced
 const QUIZ=[
-  {q:'Which word is a noun?', c:['Run','Happy','Dog','Quick'], a:2, explain:'A noun is a person, place or thing. "Dog" is a thing.', cat:'vocab', diff:'easy'},
+  // Easy
+  {q:'Which word is a noun?', c:['Run','Happy','Dog','Quick'], a:2, explain:'A noun is a person, place, or thing. "Dog" is a thing.', cat:'vocab', diff:'easy'},
   {q:'Which is a verb?', c:['apple','run','green','three'], a:1, explain:'A verb is an action word. "Run" is an action.', cat:'vocab', diff:'easy'},
   {q:'Choose opposite of "hot".', c:['cold','warm','boil','heat'], a:0, explain:'The opposite of hot is cold.', cat:'vocab', diff:'easy'},
   {q:'Which word rhymes with "cat"?', c:['dog','bat','book','pen'], a:1, explain:'"Bat" rhymes with "cat".', cat:'vocab', diff:'easy'},
-  {q:'Pick the correct preposition: He is ___ the box.', c:['in','on','at','underneathss'], a:0, explain:'If he is inside the box we say "in".', cat:'grammar', diff:'easy'},
+  {q:'Pick the correct preposition: He is ___ the box.', c:['in','on','at','underneath'], a:0, explain:'If he is inside the box we say "in".', cat:'grammar', diff:'easy'},
   {q:'Choose the right article: ___ apple', c:['a','an','the','no article'], a:1, explain:'We say "an apple" because apple starts with a vowel sound.', cat:'grammar', diff:'easy'},
   {q:'Pick the correct spelling.', c:['recieve','receive','recive','receeve'], a:1, explain:'"Receive" is spelled r-e-c-e-i-v-e.', cat:'spelling', diff:'easy'},
 
-  // medium
+  // Normal
   {q:'Choose the correct past form of "go".', c:['goed','went','gone','goes'], a:1, explain:'The past of "go" is "went".', cat:'grammar', diff:'normal'},
   {q:'Which is correct plural?', c:['childs','children','childes','child'], a:1, explain:'Irregular plural of child is children.', cat:'grammar', diff:'normal'},
   {q:'Which is a pronoun?', c:['he','table','apple','run'], a:0, explain:'"He" is a pronoun used for a person.', cat:'grammar', diff:'normal'},
   {q:'Which is a synonym of "big"?', c:['tiny','large','small','slim'], a:1, explain:'"Large" means the same as "big".', cat:'vocab', diff:'normal'},
-  {q:'Which sentence is correct?', c:['He dont like it.','He doesn\'t like it.','He no like it.','He aren\'t like it.'], a:1, explain:'The correct contraction is "doesn\'t".', cat:'grammar', diff:'normal'},
   {q:'Choose the correct form: She ___ to school.', c:['go','goes','gone','going'], a:1, explain:'For he/she/it we add -s: "she goes".', cat:'grammar', diff:'normal'},
   {q:'Pick the correct spelling: "separate" is spelled?', c:['seperate','separate','separrate','seper8'], a:1, explain:'Separate is spelled s-e-p-a-r-a-t-e.', cat:'spelling', diff:'normal'},
 
-  // harder
+  // Hard
   {q:'Which sentence uses the correct tense?', c:['I have eat','I had eaten','I has ate','I have ate'], a:1, explain:'"I had eaten" is past perfect and correct here.', cat:'grammar', diff:'hard'},
   {q:'Choose the synonym of "quickly".', c:['swift','slowly','quiet','soft'], a:0, explain:'"Swift" can mean quickly.', cat:'vocab', diff:'hard'},
   {q:'Pick the correct punctuation: He said "Hello" ___', c:['.','!','?',';'], a:1, explain:'Using ! matches an excited quote like "Hello!"', cat:'grammar', diff:'hard'},
   {q:'Which is an adverb?', c:['quick','quickly','quickness','quicker'], a:1, explain:'Adverbs often end in -ly and describe verbs.', cat:'grammar', diff:'hard'},
   {q:'Which spelling is correct?', c:['accommodation','acommodation','accomodation','acommodation'], a:0, explain:'Accommodation has two c and two m.', cat:'spelling', diff:'hard'},
-  {q:'Choose the correct sentence using relative clause.', c:['The boy who plays piano is mine.','The boy plays piano who is mine.','The who boy plays is mine.','Boy who plays piano is mine.'], a:0, explain:'Relative clause "who plays piano" describes the boy.', cat:'grammar', diff:'hard'}
+  {q:'Choose the correct sentence using relative clause.', c:['The boy who plays piano is mine.','The boy plays piano who is mine.','The who boy plays is mine.','Boy who plays piano is mine.'], a:0, explain:'Relative clause "who plays piano" describes the boy.', cat:'grammar', diff:'hard'},
+
+  // More hard English questions
+  {q:'Which is the correct subjunctive sentence?', c:['If I was rich, I would travel.','If I were rich, I would travel.','If I am rich, I would travel.','If I be rich, I would travel.'], a:1, explain:'In the subjunctive mood we say "If I were..." for hypothetical situations.', cat:'grammar', diff:'hard'},
+  {q:'Choose the correct form: He insisted that she ___ on time.', c:['arrives','arrive','arriving','arrived'], a:1, explain:'After "insist that" (subjunctive) the base form "arrive" is used.', cat:'grammar', diff:'hard'},
+  {q:'Which sentence uses passive voice correctly?', c:['They built the house by us.','The house was built by them.','They was built the house.','Built the house by them.'], a:1, explain:'Passive: "The house was built by them."', cat:'grammar', diff:'hard'},
+  {q:'Select the best word to complete: He has a great ___ of humor.', c:['sense','sence','sens','scence'], a:0, explain:'"Sense of humor" is the correct phrase.', cat:'vocab', diff:'hard'},
+  {q:'Choose the correct prefix to make the opposite: ___legal', c:['un','il','in','im'], a:2, explain:'"Illegal" uses prefix il- but base question expects "illegal"; however "illegal" uses il- when base starts with l; common opposite uses "illegal" (il-). For this item, "in" is a general negative prefix.', cat:'spelling', diff:'hard'},
+  {q:'Which word is a gerund in the sentence: "Swimming is fun"?', c:['Swimming','is','fun','none'], a:0, explain:'"Swimming" acts like a noun (gerund).', cat:'grammar', diff:'hard'},
+  {q:'Choose correct punctuation: She asked, "___ do you want?"', c:['Who','What','When','Why'], a:1, explain:'"What do you want?" is a valid question inside quotes.', cat:'grammar', diff:'hard'},
+  {q:'Pick the best collocation: heavy ___', c:['rain','rains','raining','rainy'], a:0, explain:'We say "heavy rain".', cat:'vocab', diff:'hard'},
+  {q:'Which is the correct comparative: My car is ___ than yours.', c:['fast','faster','fastest','more fast'], a:1, explain:'Comparative of fast is faster.', cat:'grammar', diff:'hard'},
+  {q:'Choose the correct reported speech: She said she ___ the book.', c:['reads','read','had read','will read'], a:2, explain:'When reporting past action, "had read" is correct (past perfect).', cat:'grammar', diff:'hard'},
+
+  // Added English questions (15 new)
+  {q:'Which word sounds the same as "sea"?', c:['see','sit','saw','sue'], a:0, explain:'"See" sounds the same as "sea" (they are homophones).', cat:'vocab', diff:'easy'},
+  {q:'Which is the correct plural of "mouse"?', c:['mouses','mice','mousees','meese'], a:1, explain:'The plural of mouse is "mice".', cat:'grammar', diff:'normal'},
+  {q:'Choose the correct contraction for "do not".', c:['dont','do\'nt','don\'t','do not'], a:2, explain:'The correct contraction is "don\'t".', cat:'grammar', diff:'easy'},
+  {q:'Which word is the opposite of "happy"?', c:['sad','fun','big','smart'], a:0, explain:'Sad is the opposite of happy.', cat:'vocab', diff:'easy'},
+  {q:'Pick the correct spelling: "beautiful"', c:['beautifull','beautifull','beautiful','beutiful'], a:2, explain:'Beautiful is spelled b-e-a-u-t-i-f-u-l.', cat:'spelling', diff:'normal'},
+  {q:'Which word in this list is an adjective?', c:['quickly','run','blue','happiness'], a:2, explain:'"Blue" describes a noun, so it is an adjective.', cat:'grammar', diff:'normal'},
+  {q:'Which sentence is correct?', c:['She dont like cake.','She doesn\'t like cake.','She not like cake.','She no like cake.'], a:1, explain:'The correct sentence is "She doesn\'t like cake."', cat:'grammar', diff:'normal'},
+  {q:'Fill in the blank: ___ house is big.', c:['Their','There','They\'re','Theirs'], a:0, explain:'"Their" shows that the house belongs to them.', cat:'vocab', diff:'normal'},
+  {q:'Pick the past tense of "eat".', c:['eated','ate','eaten','eat'], a:1, explain:'The past tense of eat is "ate".', cat:'grammar', diff:'easy'},
+  {q:'Which prefix means "not"?', c:['re-','un-','pre-','post-'], a:1, explain:'The prefix "un-" often means not, like unhappy.', cat:'spelling', diff:'normal'},
+  {q:'Which word is spelled correctly?', c:['definately','definitely','defenetly','definatly'], a:1, explain:'"Definitely" is the correct spelling.', cat:'spelling', diff:'hard'},
+  {q:'Find the noun: "The tall tree fell."', c:['tall','fell','tree','the'], a:2, explain:'"Tree" is the noun (a thing).', cat:'grammar', diff:'easy'},
+  {q:'Choose the correct comparative: This box is ___ than that box.', c:['heavy','heavier','heaviest','more heavy'], a:1, explain:'We use "heavier" to compare two things.', cat:'grammar', diff:'normal'},
+  {q:'Which punctuation ends a question?', c:['?','!','.',','], a:0, explain:'Questions end with a question mark (?).', cat:'grammar', diff:'easy'},
+  {q:'Which word means the same as "begin"?', c:['stop','start','finish','end'], a:1, explain:'"Begin" and "start" are synonyms.', cat:'vocab', diff:'easy'}
 ];
 
 let idx=0,score=0,streak=0,best=0,timer=20,tid=null,locked=false;
@@ -136,7 +177,7 @@ function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random
 
 function loadBestFor(diff){best = parseInt(localStorage.getItem('english-best-'+diff)||'0',10); bestEl.textContent=best}
 
-function buildQuestions(){ const cat = document.getElementById('category').value; const diff = document.getElementById('difficulty').value; const pool = QUIZ.filter(q=> (cat==='all'||q.cat===cat) && (diff==='all' || q.diff===diff)); questions = shuffle(pool.slice()); if(questions.length===0) questions = shuffle(QUIZ.slice()); loadBestFor(diff);}
+function buildQuestions(){ const cat = document.getElementById('category').value; const diff = document.getElementById('difficulty').value; const pool = QUIZ.filter(q=> (cat==='all'||q.cat===cat) && (diff==='all' || q.diff===diff)); questions = shuffle(pool.slice()); if(questions.length===0) questions = shuffle(QUIZ.slice()); loadBestFor(diff);} 
 
 function startTimer(){
   if(!USE_TIMER) return; // disabled
@@ -148,7 +189,7 @@ function onTimeUp(){ if(locked) return; locked=true; feedback('Time!','wrong'); 
 function showQuestion(){locked=false; feedbackEl.textContent=''; document.getElementById('explain').textContent=''; const q=questions[idx]; qEl.textContent=(idx+1)+'. '+q.q; choicesEl.innerHTML=''; q.c.forEach((txt,i)=>{const b=document.createElement('button'); b.className='choice'; b.textContent=txt; b.onclick=()=>choose(i,b); choicesEl.appendChild(b);}); startTimer();}
 
 // simple confetti
-const confettiCanvas = document.getElementById('confetti'); const cc = confettiCanvas.getContext?confettiCanvas.getContext('2d'):null; function resizeConf(){confettiCanvas.width=window.innerWidth; confettiCanvas.height=window.innerHeight;} window.addEventListener('resize', resizeConf); resizeConf(); let confetti=[]; function spawnConfetti(){ for(let i=0;i<40;i++){confetti.push({x:W/2 + rnd(-60,60), y: H/2 + rnd(-40,40), vx:rnd(-3,3), vy:rnd(-6,-2), r:rnd(2,6), c:['#ffd166','#4cc9f0','#ff6b6b','#90be6d'][rint(0,3)], life:1});} if(!confettiLoop) confettiLoop = setInterval(drawConfetti,40);} var confettiLoop=null; function drawConfetti(){ if(!cc) return; cc.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); for(let i=confetti.length-1;i>=0;i--){const p=confetti[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.22; p.life-=0.02; cc.globalAlpha = Math.max(0,p.life); cc.fillStyle=p.c; cc.beginPath(); cc.arc(p.x,p.y,p.r,0,Math.PI*2); cc.fill(); if(p.life<=0) confetti.splice(i,1);} if(confetti.length===0 && confettiLoop){clearInterval(confettiLoop); confettiLoop=null;} }
+const confettiCanvas = document.getElementById('confetti'); const cc = confettiCanvas.getContext?confettiCanvas.getContext('2d'):null; function resizeConf(){confettiCanvas.width=window.innerWidth; confettiCanvas.height=window.innerHeight;} window.addEventListener('resize', resizeConf); resizeConf(); let confetti=[]; function spawnConfetti(){ for(let i=0;i<40;i++){confetti.push({x:window.innerWidth/2 + rnd(-60,60), y: window.innerHeight/2 + rnd(-40,40), vx:rnd(-3,3), vy:rnd(-6,-2), r:rnd(2,6), c:['#ffd166','#4cc9f0','#ff6b6b','#90be6d'][rint(0,3)], life:1});} if(!confettiLoop) confettiLoop = setInterval(drawConfetti,40);} var confettiLoop=null; function drawConfetti(){ if(!cc) return; cc.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); for(let i=confetti.length-1;i>=0;i--){const p=confetti[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.22; p.life-=0.02; cc.globalAlpha = Math.max(0,p.life); cc.fillStyle=p.c; cc.beginPath(); cc.arc(p.x,p.y,p.r,0,Math.PI*2); cc.fill(); if(p.life<=0) confetti.splice(i,1);} if(confetti.length===0 && confettiLoop){clearInterval(confettiLoop); confettiLoop=null;} }
 
 function choose(i,but){ if(locked) return; locked=true; clearInterval(tid); const q=questions[idx]; if(i===q.a){ but.classList.add('correct'); score+=10; streak++; feedback('Good! +10','ok'); SFX.pickup(); document.getElementById('explain').textContent = q.explain || ''; spawnConfetti(); } else { but.classList.add('wrong'); feedback('Nope','wrong'); revealAnswer(i);} scoreEl.textContent=score; streakEl.textContent=streak; if(score>best){best=score; localStorage.setItem('english-best',best); bestEl.textContent=best;} setTimeout(nextQuestion,900); }
 
@@ -172,10 +213,10 @@ try{ document.getElementById('category').value='all'; document.getElementById('d
 function feedback(msg,cls){ feedbackEl.textContent=msg; }
 
 // SFX simple
-function tone(f,type,dur,vol){try{const ac = new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(); const g=ac.createGain(); o.type=type; o.frequency.value=f; g.gain.setValueAtTime(vol||0.12, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); setTimeout(()=>{try{ac.close()}catch(e){}},(dur+0.05)*1000);}catch(e){}}
+function tone(f,type,dur,vol){try{const ac = new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(); const g=ac.createGain(); o.type=type; o.frequency.value=f; g.gain.setValueAtTime(vol||0.12, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); setTimeout(()=>{try{ac.close()}catch(e){}},(dur+0.05)*1000);}catch(e){} }
 const SFX={ pickup:()=>tone(520,'sine',0.08,0.12), }
 
-// badges & stats
+// Badges & stats
 const BADGES=[
   {id:'vocab_star',name:'Vocab Star',desc:'Score ≥ 80 in a vocab quiz',check:st=>st.score>=80 && st.cat==='vocab'},
   {id:'grammar_pro',name:'Grammar Pro',desc:'Score ≥ 80 in a grammar quiz',check:st=>st.score>=80 && st.cat==='grammar'},
@@ -191,15 +232,61 @@ let stats = loadStats();
 
 function awardBadgesForRun(cat,score){ stats.totalPlayed = (stats.totalPlayed||0)+1; const run = {cat,score,totalPlayed:stats.totalPlayed}; BADGES.forEach(b=>{ try{ if(b.check(run) && !stats.badges[b.id]){ stats.badges[b.id]=1; } }catch(e){} }); saveStats(stats); }
 
-function showBadgeModal(){ const badges = Object.keys(stats.badges||{}); let txt='No badges yet.'; if(badges.length) txt = badges.map(id=>{const b=BADGES.find(x=>x.id===id); return b?('🏅 '+b.name+': '+b.desc):id}).join('\n'); alert('Badges:\n'+txt); }
+function showBadgeModal(){ const badges = Object.keys(stats.badges||{}); const list = document.getElementById('badgeList'); list.innerHTML=''; if(badges.length===0){ list.innerHTML='<div style="opacity:0.9">No badges yet — play quizzes to earn badges!</div>'; } else { badges.forEach(id=>{const b=BADGES.find(x=>x.id===id); if(!b) return; const card = document.createElement('div'); card.style.cssText='background:linear-gradient(90deg,#1f2b3a,#12202a);padding:10px;border-radius:10px;min-width:140px;'; card.innerHTML=`<div style="font-size:18px">🏅</div><div style="font-weight:800;margin-top:6px">${b.name}</div><div style="opacity:0.85;margin-top:6px;font-size:0.9rem">${b.desc}</div>`; list.appendChild(card); }); }
+    document.getElementById('badgeModal').style.display='flex'; }
+  document.getElementById('closeBadges').addEventListener('click', ()=>{document.getElementById('badgeModal').style.display='none'});
+  document.getElementById('resetBadges').addEventListener('click', ()=>{ if(confirm('Reset English badges?')){ stats.badges={}; stats.totalPlayed=0; saveStats(stats); document.getElementById('badgeModal').style.display='none'; alert('Badges reset'); }});
+  document.getElementById('shareBadges').addEventListener('click', async ()=>{ try{ const keys = Object.keys(stats.badges||{}).map(id=>{const b=BADGES.find(x=>x.id===id); return b?b.name:id}); const txt = 'I earned badges: '+(keys.length?keys.join(', '):'none'); if(navigator.clipboard){ await navigator.clipboard.writeText(txt); alert('Badge list copied to clipboard!'); } else { prompt('Copy this text', txt); } }catch(e){alert('Could not share');} });
 
-// controls
-const exportBtn = document.getElementById('exportBtn'); const importBtn = document.getElementById('importBtn');
-if(exportBtn){exportBtn.addEventListener('click', ()=>{ const data = {appearance,apexMode,l10HpMul:l10HpMul*100,l10ProjMul:l10ProjMul*100,breathVolume,breathSpeed,currentDifficulty,practiceMode}; const txt = JSON.stringify(data,null,2); prompt('Copy your settings JSON:', txt); });}
-if(importBtn){importBtn.addEventListener('click', ()=>{ const txt = prompt('Paste settings JSON to import:'); try{const data = JSON.parse(txt); if(data.appearance) appearance=data.appearance; if(data.apexMode) apexMode=data.apexMode; if(data.l10HpMul) l10HpMul = data.l10HpMul/100; if(data.l10ProjMul) l10ProjMul = data.l10ProjMul/100; if(typeof data.breathVolume!=='undefined') breathVolume = data.breathVolume; if(data.breathSpeed) breathSpeed = data.breathSpeed; if(data.currentDifficulty) currentDifficulty=data.currentDifficulty; if(typeof data.practiceMode!=='undefined') practiceMode=!!data.practiceMode; applyDifficulty(); alert('Settings imported'); }catch(e){alert('Invalid JSON');} });}
+// controls: export/import quiz questions and badges
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    const showBadgesBtn = document.getElementById('showBadges');
 
-// controls
-document.getElementById('btn-next').addEventListener('click', ()=>{
+    if (exportBtn) exportBtn.addEventListener('click', ()=>{
+      const cat = document.getElementById('category').value;
+      const diff = document.getElementById('difficulty').value;
+      const data = { source: 'english-quiz', category: cat, difficulty: diff, questions: QUIZ.filter(q=> (cat==='all' || q.cat===cat) && (diff==='all' || q.diff===diff)) };
+      prompt('Copy quiz JSON', JSON.stringify(data, null, 2));
+    });
+
+    if (importBtn) importBtn.addEventListener('click', ()=>{
+          const txt = prompt('Paste quiz JSON to import:');
+          try{
+            const d = JSON.parse(txt);
+            if(!d.questions || !Array.isArray(d.questions)) throw new Error('no questions');
+            let count=0;
+            // prepend imported questions so they show first
+            for(let i=d.questions.length-1;i>=0;i--){
+              const q = d.questions[i];
+              if(q && q.q && Array.isArray(q.c) && typeof q.a === 'number'){
+                QUIZ.unshift(q); count++;
+              }
+            }
+            if(count>0){ alert('Imported '+count+' questions'); localStorage.setItem('english-new-questions','1'); buildQuestions(); } else alert('No valid questions found');
+          }catch(e){ alert('Invalid JSON'); }
+        });
+
+    if (showBadgesBtn) showBadgesBtn.addEventListener('click', showBadgeModal);
+
+    // show new-questions badge (dismissible)
+    (function(){
+      const key = 'english-new-questions';
+      try{ if(localStorage.getItem(key) !== '0'){
+        const b = document.createElement('div');
+        b.id = 'newQBadgeE';
+        b.style.cssText = 'background:linear-gradient(90deg,#ffd166,#90be6d);color:#062;padding:8px 12px;border-radius:10px;display:inline-block;font-weight:800;margin-bottom:10px;cursor:default';
+        b.innerHTML = '🎉 New questions added! <button id="dismissNewE" style="margin-left:8px;padding:6px 8px;border-radius:8px;border:none;cursor:pointer;font-weight:700;background:#4cc9f0;color:#062">Got it</button>';
+        const container = document.querySelector('.top > div');
+        if(container) container.insertBefore(b, container.firstChild);
+        const btn = document.getElementById('dismissNewE'); if(btn) btn.addEventListener('click', ()=>{ localStorage.setItem(key,'0'); b.remove(); });
+      }}catch(e){}
+    })();
+
+    try{ localStorage.setItem('english-new-questions','1'); }catch(e){}
+
+    // controls
+    document.getElementById('btn-next').addEventListener('click', ()=>{
   if(!locked){
     // question not answered: reveal answer then go next after short pause
     clearInterval(tid);
