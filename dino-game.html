@@ -181,7 +181,11 @@ const SFX={
   loseLife:()=>tone(320,'sine',0.5,0.35,80),
   bossRoar:()=>{tone(80,'sawtooth',0.55,0.45,40);tone(160,'sine',0.35,0.28,80);},
   pickup:()=>{[400,560,720,960].forEach((f,i)=>setTimeout(()=>tone(f,'sine',0.12,0.2),i*55));},
-  lifePickup:()=>{ /* special heart pickup sound */ [520,640,820].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.12,0.18),i*90));},
+  // lifePickup: try to play external audio file if present, otherwise play a richer synth
+  lifePickup:()=>{tryPlayAudio('audioLife', ()=>{ // synth fallback
+      // gentle arpeggio
+      [620,740,880].forEach((freq,i)=>setTimeout(()=>tone(freq,'triangle',0.12,0.16),i*80));
+    });},
   gunDown:()=>tone(300,'sine',0.3,0.18,120),
   victory:()=>{[400,500,600,800,1000].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.28,0.22),i*120));},
   gameOver:()=>{tone(250,'sine',0.3,0.28,180);setTimeout(()=>tone(160,'sine',0.45,0.25,80),350);},
