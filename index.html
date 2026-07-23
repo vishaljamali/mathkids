@@ -183,17 +183,43 @@
 
 <p class="footer">Made with ❤️ by a 4th grader from Germany</p>
 
-<!-- Trophy badge for beating Apex -->
-<script></script>
+<!-- Trophy badge for beating Apex + modal with stats and reset -->
+<div id="trophyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:9999;">
+  <div style="background:#0b1220;color:#fff;border-radius:12px;padding:18px;max-width:420px;width:92%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
+    <h2 style="margin-bottom:8px;">🏆 Apex Conqueror</h2>
+    <div id="trophyStats" style="margin-bottom:12px;font-size:0.95rem;opacity:0.95;"></div>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button id="closeTrophy" style="padding:8px 12px;border-radius:8px;background:#4cc9f0;color:#062;border:none;font-weight:700;">Close</button>
+      <button id="resetTrophy" style="padding:8px 12px;border-radius:8px;background:#ff6666;color:#062;border:none;font-weight:700;">Reset Achievements</button>
+    </div>
+  </div>
+</div>
+
+<script>
   try{
     const stuck = localStorage.getItem('dino-apex-beaten');
+    const count = parseInt(localStorage.getItem('dino-apex-beaten-count')||'0',10)||0;
     if(stuck==='1'){
       const card = document.querySelector('.card');
       const badge = document.createElement('div');
-      badge.style.cssText = 'position:absolute;right:18px;top:18px;background:linear-gradient(90deg,#ffd166,#f9c74f);color:#0b0a1e;padding:8px 12px;border-radius:8px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,0.35);';
+      badge.style.cssText = 'position:absolute;right:18px;top:18px;background:linear-gradient(90deg,#ffd166,#f9c74f);color:#0b0a1e;padding:8px 12px;border-radius:8px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,0.35);cursor:pointer;';
       badge.innerText = '🏆 Apex Conqueror!';
+      badge.addEventListener('click', ()=>{
+        const modal = document.getElementById('trophyModal');
+        const stats = document.getElementById('trophyStats');
+        const best = localStorage.getItem('catblaster-best')||0;
+        stats.innerHTML = `<div style="margin-bottom:6px;">Times beaten: <strong>${count}</strong></div><div>Best score: <strong>${best}</strong></div>`;
+        modal.style.display = 'flex';
+      });
       card.appendChild(badge);
     }
+  }catch(e){}
+  // modal handlers
+  try{
+    document.getElementById('closeTrophy').addEventListener('click', ()=>{document.getElementById('trophyModal').style.display='none';});
+    document.getElementById('resetTrophy').addEventListener('click', ()=>{
+      if(confirm('Reset achievements?')){localStorage.removeItem('dino-apex-beaten');localStorage.removeItem('dino-apex-beaten-count');location.reload();}
+    });
   }catch(e){}
 </script>
 
