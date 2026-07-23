@@ -241,7 +241,7 @@ let mFlash=0,mFlashX=0,mFlashY=0;
 let bullets=[],enemies=[],particles=[],casings=[],bossProjectiles=[],powerups=[];
 let boss=null,bossWarningTimer=0,warnBossName='';
 let phase2Banner=0,gunLevel=1,gunTimer=0;
-const cat={x:CAT_X,y:H/2,speed:5,sTimer:0,sRate:18};
+const cat={x:CAT_X,y:H/2,speed:5,sTimer:0,sRate:18,mouthTimer:0,breathTimer:240}; // mouthTimer controls jaw animation, breathTimer triggers breathing sound/animation
 
 // ── INPUT ──────────────────────────────────────────────────────────────────
 const K={};
@@ -307,17 +307,24 @@ function drawBackground(){
 }
 
 // ── DRAW: DINO (more realistic anatomy + subtle animation, lightweight) ─────
+// ── DRAW: DINO (more realistic anatomy + subtle animation, lightweight) ─────
 function drawCat(cx,cy){
   const x = cx + recoil, y = cy;
+  // breathing scale from cat.breathTimer to add subtle chest movement
+  const breath = 1 + 0.012 * Math.sin((frame + (cat.breathTimer%360)) * 0.06);
   const bob = Math.sin(frame*0.06)*1.6;
   ctx.save(); ctx.translate(x, y + bob);
+  ctx.scale(breath, breath);
 
   // appearance palette (adjusted per appearance elsewhere)
-  const base1 = '#2b8fb8';
-  const base2 = '#18677f';
-  const belly = '#d6eef4';
-  const scaleCol = '#1b6b8a';
-  const eyeCol = '#ffcc33';
+  const base1 = (appearance==='fierce')? '#8b2b2b' : (appearance==='cute')? '#8fbf6b' : '#2b8fb8';
+  const base2 = (appearance==='fierce')? '#5a1b1b' : (appearance==='cute')? '#6aa95a' : '#18677f';
+  const belly = (appearance==='cute')? '#fff6e8' : '#d6eef4';
+  const scaleCol = (appearance==='fierce')? '#7a3b3b' : '#1b6b8a';
+  const eyeCol = (appearance==='fierce')? '#ffb33b' : '#ffcc33';
+
+  // dynamic jaw opening influenced by mouthTimer (when shooting) and breathing
+  const mouthOpen = Math.max(0, (cat.mouthTimer||0)/6) + (1 + Math.max(0, Math.sin(frame*0.18))*1.8);
 
   // subtle body gradient
   const g = ctx.createLinearGradient(-40,-20,40,30);
@@ -370,9 +377,8 @@ function drawCat(cx,cy){
   // neck and head with jaw animation for realism
   const headY = -24 + Math.sin(frame*0.08)*1.2;
   ctx.fillStyle = base1; ctx.beginPath(); ctx.ellipse(48, headY, 28, 22, -0.14, 0, Math.PI*2); ctx.fill();
-  // jaw opening slightly when moving
-  const mouthOpen = 2 + Math.max(0, Math.sin(frame*0.18))*3;
-  ctx.fillStyle = belly; ctx.beginPath(); ctx.ellipse(66, -6 + mouthOpen, 22, 11 + mouthOpen*0.6, 0.12, 0, Math.PI*2); ctx.fill();
+  // jaw opening slightly when moving and when shooting
+  ctx.fillStyle = belly; ctx.beginPath(); ctx.ellipse(66, -6 + mouthOpen*0.6, 22, 11 + mouthOpen*0.35, 0.12, 0, Math.PI*2); ctx.fill();
 
   // nostril and nasal ridge
   ctx.fillStyle = '#153c3f'; ctx.beginPath(); ctx.ellipse(60, -32, 2.2, 1.2, 0, 0, Math.PI*2); ctx.fill();
@@ -723,6 +729,8 @@ function shoot(){
   gc.offsets.forEach(dy=>bullets.push({x:mx,y:my+dy,vx:gc.vx,r:gc.r,lvl:gunLevel}));
   mFlash=1;mFlashX=mx;mFlashY=my;
   recoil=-6-(gunLevel-1)*1.5;
+  // mouth animation when shooting
+  cat.mouthTimer = 10;
   for(let c=0;c<=Math.floor((gunLevel-1)/2);c++)
     casings.push({x:cat.x+44,y:cat.y+14+c*5,vx:rnd(-4,-1.5),vy:rnd(-5,-2),angle:Math.random()*Math.PI*2,spin:(Math.random()-.5)*.6,life:1});
   SFX.shoot();
@@ -855,6 +863,18 @@ function update(){
   cat.y=clamp(cat.y,58,GROUND_Y-38);
 
   cat.sTimer++;if(cat.sTimer>=GUN_CFG[gunLevel].rate){shoot();cat.sTimer=0;}
+
+  // mouth timer decrement
+  if(cat.mouthTimer>0)cat.mouthTimer--;
+
+  // breathing sound timer
+  if((cat.breathTimer||0)<=0){
+    // schedule next breath and play soft inhale/exhale tones
+    cat.breathTimer = 360 + Math.floor(Math.random()*240);
+    if(!muted && soundUnlocked){
+      tone(220,'sine',0.18,0.06);setTimeout(()=>tone(300,'triangle',0.12,0.04),220);
+    }
+  } else cat.breathTimer--;
 
   if(boss)updateBoss();
 
