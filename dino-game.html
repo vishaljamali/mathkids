@@ -76,20 +76,28 @@
         <input type="checkbox" id="practice"/> Practice mode
       </label>
       <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
-              Appearance:
-              <select id="appearance" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
-                <option value="normal" selected>Normal</option>
-                <option value="fierce">Fierce</option>
-                <option value="cute">Cute</option>
-              </select>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
-              <input type="checkbox" id="roarOnBoss"/> Roar on boss
-            </label>
-            <button id="startBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#4cc9f0;color:#04202a;font-weight:700;">▶ Start</button>
-            <button id="resetBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#f3722c;color:#0b0a1e;font-weight:700;">⟲ Reset</button>
-            <button id="muteBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#fff;">🔊</button>
-          </div>
+        Appearance:
+        <select id="appearance" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+          <option value="normal" selected>Normal</option>
+          <option value="fierce">Fierce</option>
+          <option value="cute">Cute</option>
+        </select>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+        <input type="checkbox" id="roarOnBoss"/> Roar on boss
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+        Breath Vol
+        <input id="breathVol" type="range" min="0" max="100" value="6" style="width:110px;margin-left:8px;" />
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+        Breath Speed
+        <input id="breathSpeed" type="range" min="180" max="720" value="420" style="width:110px;margin-left:8px;" />
+      </label>
+      <button id="startBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#4cc9f0;color:#04202a;font-weight:700;">▶ Start</button>
+      <button id="resetBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#f3722c;color:#0b0a1e;font-weight:700;">⟲ Reset</button>
+      <button id="muteBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#fff;">🔊</button>
+    </div>
 
     <div class="dpad">
       <button class="dpad-btn" id="btn-up" aria-label="Move up">▲</button>
@@ -208,8 +216,13 @@ let currentDifficulty='normal';
 let practiceMode=false;
 let appearance='normal';
 let roarOnBoss=false; // play special roar when boss spawns/phase2 for fierce skin
+let breathVolume = 0.06; // 0..0.2
+let breathSpeed = 420; // frames between breaths (180..720)
 
 function applyDifficulty(){
+  // update breath settings from controls if present (live)
+  try{const bv = document.getElementById('breathVol'); if(bv) breathVolume = parseInt(bv.value,10)/100;}catch(e){}
+  try{const bs = document.getElementById('breathSpeed'); if(bs) breathSpeed = parseInt(bs.value,10);}catch(e){}
   // build LEVEL_CFG from BASE_LEVEL_CFG applying multipliers
   const diff=currentDifficulty;
   LEVEL_CFG=[null];
@@ -779,6 +792,8 @@ function explode(x,y,big){
 
 function takeDamage(){
   lives--;screenFlash=1;shakePow=16;SFX.loseLife();
+  // mouth flinch
+  cat.mouthTimer = Math.max(cat.mouthTimer, 18);
   if(lives<=0){if(score>best){best=score;localStorage.setItem('catblaster-best',best);}state='gameover';SFX.gameOver();}
 }
 
@@ -869,10 +884,10 @@ function update(){
 
   // breathing sound timer
   if((cat.breathTimer||0)<=0){
-    // schedule next breath and play soft inhale/exhale tones
-    cat.breathTimer = 360 + Math.floor(Math.random()*240);
+    // schedule next breath based on breathSpeed slider
+    cat.breathTimer = Math.max(60, breathSpeed + Math.floor(Math.random()*(breathSpeed*0.6)));
     if(!muted && soundUnlocked){
-      tone(220,'sine',0.18,0.06);setTimeout(()=>tone(300,'triangle',0.12,0.04),220);
+      tone(220,'sine',0.18,Math.min(0.28, breathVolume));setTimeout(()=>tone(300,'triangle',0.12,Math.min(0.18, breathVolume*0.7)),Math.max(160,Math.round(220*breathVolume+80)));
     }
   } else cat.breathTimer--;
 
@@ -932,7 +947,9 @@ function update(){
       const dx=p.x-cat.x,dy=(p.y+Math.sin(frame*.09+p.bobPhase)*8)-cat.y;
       if(Math.abs(dx)<55&&Math.abs(dy)<55){
         p.collected=true;gunLevel=Math.min(4,gunLevel+1);gunTimer=GUN_DURATION;SFX.pickup();shakePow=8;
-        for(let k=0;k<16;k++){const a=rnd(0,Math.PI*2),s=rnd(2,7);particles.push({x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,c:'#f9c74f',r:rnd(2,5)});}
+        // mouth happy animation
+        cat.mouthTimer = Math.max(cat.mouthTimer, 14);
+        for(let k=0;k<16;k++){const a=rnd(0,Math.PI*2),s=rnd(2,7);particles.push({x:p.x,y:p.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:1,c:'#f9c74f',r:rnd(2,5)});} 
       }
     }else{p.collectAnim+=0.12;p.life-=0.09;if(p.life<=0){powerups.splice(i,1);continue;}}
   }
@@ -1047,6 +1064,12 @@ function loop(ts){
         }
         if(_startBtn){_startBtn.addEventListener('click', startGame); _startBtn.addEventListener('touchstart', startGame,{passive:false});}
         if(_resetBtn){_resetBtn.addEventListener('click', resetGame); _resetBtn.addEventListener('touchstart', resetGame,{passive:false});}
+        // live apply appearance and breath controls
+        try{
+          const app = document.getElementById('appearance'); if(app) app.addEventListener('change', e=>{appearance=e.target.value;});
+          const bv = document.getElementById('breathVol'); if(bv) bv.addEventListener('input', e=>{breathVolume = parseInt(e.target.value,10)/100;});
+          const bs = document.getElementById('breathSpeed'); if(bs) bs.addEventListener('input', e=>{breathSpeed = parseInt(e.target.value,10);});
+        }catch(e){}
 
         // expose for inline onclick (Safari may require global function)
         try{window.unlockSound = unlockSound; window.startGame = startGame; window.resetGame = resetGame;}catch(e){}
