@@ -111,11 +111,16 @@
     }
 
     .math-btn  { border-color: rgba(76, 201, 240, 0.3); }
-    .math-btn .name  { color: #4cc9f0; }
-    .math-btn:hover  { border-color: #4cc9f0; }
+        .dino-btn   { border-color: rgba(249, 199, 79, 0.3); }
 
-    .dino-btn   { border-color: rgba(249, 199, 79, 0.3); }
-        .dino-btn .name   { color: #f9c74f; }
+        /* Ensure button titles and descriptions are always light and readable.
+           Include link/visited states so some browsers (like Safari) don't show
+           default dark link colors. */
+        .game-btn, .game-btn:link, .game-btn:visited { color: inherit; text-decoration: none; }
+        .game-btn .name { color: #ffffff; }
+        .game-btn .desc { color: rgba(255,255,255,0.92); }
+
+        .math-btn:hover  { border-color: #4cc9f0; }
         .dino-btn:hover   { border-color: #f9c74f; }
 
     /* Tablet and up — side-by-side cards */
@@ -175,6 +180,14 @@
       <div class="text">
         <div class="name">Dino Blaster</div>
         <div class="desc">Shoot evil rats & bats · collect power-ups · beat 4 bosses!</div>
+      </div>
+    </a>
+
+    <a class="game-btn math-btn" href="soccer-game.html">
+      <div class="icon">⚽</div>
+      <div class="text">
+        <div class="name">Soccer Skill</div>
+        <div class="desc">Aim and shoot past the goalkeeper · realistic physics · mobile controls.</div>
       </div>
     </a>
 
@@ -240,14 +253,41 @@
 </script>
 
 <script>
-  // stars
-  const wrap = document.getElementById('stars');
-  for (let i = 0; i < 70; i++) {
-    const s = document.createElement('div');
-    s.className = 'star';
-    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:${Math.random()*5}s;`;
-    wrap.appendChild(s);
-  }
+// stars
+const wrap = document.getElementById('stars');
+for (let i = 0; i < 70; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;--delay:${Math.random()*5}s;`;
+  wrap.appendChild(s);
+}
+</script>
+
+<script>
+</script>// show "New questions" badges on home page for English/Physics when present
+(function(){
+  try{
+    const englishKey = localStorage.getItem('english-new-questions');
+    const physicsKey = localStorage.getItem('physics-new-questions');
+    function addBadgeToLink(href, text, key){
+      const a = document.querySelector(`a.game-btn[href="${href}"]`);
+      if(!a) return;
+      const existing = a.querySelector('.new-badge');
+      if(existing) return;
+      const badge = document.createElement('span');
+      badge.className = 'new-badge';
+      badge.textContent = text;
+      badge.style.cssText = 'background:linear-gradient(90deg,#ffd166,#90be6d);color:#062;padding:6px 8px;border-radius:10px;font-weight:800;margin-left:8px;display:inline-block';
+      // make it clickable to dismiss
+      badge.addEventListener('click', (e)=>{ e.stopPropagation(); localStorage.setItem(key,'0'); badge.remove(); location.href = href; });
+      // append to the anchor's text area
+      const textDiv = a.querySelector('.text');
+      if(textDiv) textDiv.appendChild(badge); else a.appendChild(badge);
+    }
+    if(englishKey && englishKey !== '0') addBadgeToLink('english-quiz.html', 'New!', 'english-new-questions');
+    if(physicsKey && physicsKey !== '0') addBadgeToLink('physics-quiz.html', 'New!', 'physics-new-questions');
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Soccer Skill — MathKids ⚽</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Segoe UI,Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;background:linear-gradient(180deg,#0b3a2f,#04221a);color:#fff;padding:12px}
+    .card{width:100%;max-width:920px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    h1{font-size:1.4rem;color:#ffd166;margin-bottom:8px}
+    p.lead{opacity:0.9;margin-bottom:12px}
+    canvas{width:100%;height:auto;border-radius:8px;background:#0a6b3f;display:block}
+    .controls{display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap}
+    .btn{padding:10px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:800}
+    .btn.start{background:#4cc9f0;color:#062}
+    .btn.reset{background:#ffd166;color:#062}
+    .meta{display:flex;gap:12px;align-items:center;margin-top:10px}
+    .hud{font-weight:800}
+    .mobile-controls{display:flex;gap:8px;margin-top:10px;align-items:center;justify-content:center}
+    .touch-btn{padding:14px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.06);font-weight:800}
+    label.select{font-weight:700}
+    @media(min-width:640px){ .mobile-controls{display:none} }
+    @media(max-width:639px){ .controls{display:none} }
+    .footer{margin-top:10px;font-size:0.9rem;color:rgba(255,255,255,0.85)}
+    .roster {margin-left:8px}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Soccer Skill ⚽</h1>
+    <p class="lead">Practice free kicks with the Portugal National Team style. Drag to aim, tap Shoot to kick. Works on phones and laptops.</p>
+
+    <canvas id="field" width="900" height="520" aria-label="Soccer field"></canvas>
+
+    <div class="controls">
+      <button id="startBtn" class="btn start">Start</button>
+      <button id="resetBtn" class="btn reset">Reset</button>
+
+      <label class="select">Level:
+        <select id="levelSelect" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+          <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+        </select>
+      </label>
+
+      <label class="select roster">Player:
+        <select id="playerSelect" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+          <option value="1">Rui Patrício (GK)</option>
+          <option value="2">Cristiano Ronaldo</option>
+          <option value="3">Bruno Fernandes</option>
+          <option value="4">Bernardo Silva</option>
+          <option value="5">João Félix</option>
+          <option value="6">Rúben Dias</option>
+          <option value="7">Pepe</option>
+          <option value="8">Diogo Jota</option>
+          <option value="9">João Cancelo</option>
+          <option value="10">Rúben Neves</option>
+        </select>
+      </label>
+
+      <img id="playerPhoto" src="images/portugal1.svg" alt="player photo" style="width:56px;height:56px;border-radius:8px;margin-left:10px;border:2px solid rgba(255,255,255,0.06)" />
+
+      <div style="margin-left:auto" class="hud">Portugal National Team 🇵🇹 &nbsp; Score: <span id="score">0</span> &nbsp;|&nbsp; Shots: <span id="shots">0</span></div>
+    </div>
+
+    <div class="mobile-controls" aria-hidden="false">
+      <button id="leftBtn" class="touch-btn">◀</button>
+      <button id="shootBtn" class="touch-btn">Shoot</button>
+      <button id="rightBtn" class="touch-btn">▶</button>
+    </div>
+
+    <div class="footer">Tip: Drag on the canvas to aim a longer shot. Player shirts use Portugal colors (red shirt, green shorts). Level increases keeper speed.</div>
+  </div>
+
+  <script>
+    // Soccer practice with Portugal visuals, levels 1-10, and goal celebration.
+    const canvas = document.getElementById('field');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // Game state
+    let running = false;
+    let score = 0, shots = 0;
+    const scoreEl = document.getElementById('score');
+    const shotsEl = document.getElementById('shots');
+    const levelSelect = document.getElementById('levelSelect');
+    const playerSelect = document.getElementById('playerSelect');
+
+    // Field & goal
+    const goal = { x: W - 60, y: H/2 - 80, w: 8, h: 160 };
+
+    // Player (Portugal colors) — jersey fills will be drawn
+    const player = { x: 140, y: H/2, r: 18, vx:0, vy:0, speed: 2.2 };
+    // Ball with spin
+    const ball = { x: player.x + 30, y: player.y, vx:0, vy:0, r:8, friction: 0.992, spin:0 };
+
+    // Goalkeeper (AI)
+    const keeper = { x: W - 90, y: H/2, vy:0, baseSpeed: 1.6, reach: 52, name: 'Rui Patrício' };
+
+    // player photo element — update when roster changes
+    const playerPhoto = document.getElementById('playerPhoto');
+    function setPlayerPhoto(id){ try{ playerPhoto.src = 'images/portugal' + id + '.svg'; }catch(e){} }
+    // listen for roster changes
+    document.getElementById('playerSelect').addEventListener('change', (e)=>{ setPlayerPhoto(e.target.value); const val = parseInt(e.target.value||'1',10); // if first is GK, set keeper name
+      if(val===1) keeper.name = 'Rui Patrício'; else keeper.name = 'Rui Patrício'; });
+
+    // confetti particles for celebration
+    let confetti = [];
+
+    // Aim control
+    let aim = { ax: ball.x, ay: ball.y };
+    let aiming = false;
+
+    // input
+    const keys = { left:false, right:false };
+
+    // sound helper (short tones)
+    function tone(f,type,dur,vol){ try{ const ac = new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(); const g = ac.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(vol||0.12, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); setTimeout(()=>{ try{ ac.close() }catch(e){} }, (dur+0.05)*1000); }catch(e){} }
+    function playKick(){ tone(220,'sawtooth',0.06,0.12); }
+    function playGoal(){ tone(880,'triangle',0.18,0.16); setTimeout(()=>tone(660,'sine',0.12,0.12),120); }
+
+    // Resize canvas display to be responsive
+    function fitCanvas(){ const rect = canvas.getBoundingClientRect(); canvas.style.height = Math.round(rect.width * (H / W)) + 'px'; }
+    window.addEventListener('resize', fitCanvas); fitCanvas();
+
+    // Reset game
+    function resetGame(){ score = 0; shots = 0; scoreEl.textContent = score; shotsEl.textContent = shots; player.x = 140; player.y = H/2; ball.x = player.x + 30; ball.y = player.y; ball.vx = ball.vy = ball.spin = 0; keeper.y = H/2; running = false; confetti = []; }
+
+    // Start/reset buttons
+    document.getElementById('startBtn').addEventListener('click', ()=>{ if(!running){ running = true; loop(); } });
+    document.getElementById('resetBtn').addEventListener('click', ()=>{ resetGame(); draw(); });
+
+    // Mobile touch buttons
+    document.getElementById('leftBtn').addEventListener('touchstart', e=>{ e.preventDefault(); keys.left = true; });
+    document.getElementById('leftBtn').addEventListener('touchend', e=>{ e.preventDefault(); keys.left = false; });
+    document.getElementById('rightBtn').addEventListener('touchstart', e=>{ e.preventDefault(); keys.right = true; });
+    document.getElementById('rightBtn').addEventListener('touchend', e=>{ e.preventDefault(); keys.right = false; });
+    document.getElementById('shootBtn').addEventListener('click', ()=>{ shoot(); });
+
+    // Keyboard
+    window.addEventListener('keydown', e=>{ if(e.key === 'ArrowLeft') keys.left = true; if(e.key === 'ArrowRight') keys.right = true; if(e.key === ' ' || e.key === 'Spacebar') shoot(); });
+    window.addEventListener('keyup', e=>{ if(e.key === 'ArrowLeft') keys.left = false; if(e.key === 'ArrowRight') keys.right = false; });
+
+    // Pointer aim
+    canvas.addEventListener('pointerdown', (e)=>{ aiming = true; const r = canvas.getBoundingClientRect(); aim.ax = (e.clientX - r.left) * (W / r.width); aim.ay = (e.clientY - r.top) * (H / (r.height)); });
+    canvas.addEventListener('pointermove', (e)=>{ if(!aiming) return; const r = canvas.getBoundingClientRect(); aim.ax = (e.clientX - r.left) * (W / r.width); aim.ay = (e.clientY - r.top) * (H / (r.height)); });
+    canvas.addEventListener('pointerup', ()=>{ aiming = false; });
+
+    // Shoot: compute vector from ball to aim, apply impulse and spin
+    function shoot(){ if(!running) { running = true; loop(); }
+      const dx = aim.ax - ball.x, dy = aim.ay - ball.y; const d = Math.hypot(dx,dy) || 1;
+      const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10)));
+      // power: distance dragged scaled by level
+      const drag = Math.min(220, d);
+      const powerBase = 0.8 + (drag/220) * 1.6; // 0.8..2.4
+      const power = powerBase * (1 + (level-1)*0.12); // increase modestly by level
+      const impulse = power * 5.2;
+      // apply impulse
+      ball.vx += (dx/d) * impulse; ball.vy += (dy/d) * impulse;
+      // add spin from perpendicular drag (makes curve)
+      const perp = (dx * dy) ? ( (dx/d) * (dy/d) ) : 0; // small value
+      ball.spin = ((aim.ax - (player.x+30)) / 120) * 0.18; // spin depends on horizontal aim offset
+      shots++; shotsEl.textContent = shots;
+      playKick();
+    }
+
+    // Check goal crossing
+    function checkGoal(){ if(ball.x + ball.r > goal.x && ball.x - ball.r < goal.x + goal.w){ if(ball.y > goal.y && ball.y < goal.y + goal.h) return true; } return false; }
+
+    // Keeper AI: follows ball y with speed scaled by level
+    function updateKeeper(dt){ const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10))); const speed = keeper.baseSpeed + (level-1)*0.22; const dir = Math.sign(ball.y - keeper.y); keeper.vy = dir * speed; keeper.y += keeper.vy * dt; keeper.y = Math.max(goal.y + 20, Math.min(goal.y + goal.h - 20, keeper.y)); }
+
+    // Confetti helper (spawn on goal)
+    function spawnConfetti(){ for(let i=0;i<60;i++){ confetti.push({x:goal.x + goal.w/2 + (Math.random()*160-80), y:goal.y + Math.random()*goal.h, vx:(Math.random()*6-3), vy:(Math.random()*-6-1), r:Math.random()*4+2, c:['#ffd166','#4cc9f0','#d62828','#06b873'][Math.floor(Math.random()*4)], life:1}); } }
+    function drawConfetti(dt){ for(let i=confetti.length-1;i>=0;i--){ const p = confetti[i]; p.x += p.vx * dt * 60; p.y += p.vy * dt * 60; p.vy += 0.22; p.life -= 0.02; ctx.globalAlpha = Math.max(0,p.life); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); if(p.life<=0) confetti.splice(i,1); } ctx.globalAlpha = 1; }
+
+    // Physics step with spin and improved reflections
+    function step(dt){ // player movement
+      if(keys.left) player.x -= player.speed * 60 * dt; if(keys.right) player.x += player.speed * 60 * dt;
+      player.x = Math.max(40, Math.min(W-220, player.x)); if(!aiming) player.y += (H/2 - player.y) * 0.1;
+      // keep ball near player when still
+      const dist = Math.hypot(ball.x - player.x - 30, ball.y - player.y);
+      if(dist < player.r + ball.r + 6 && Math.hypot(ball.vx,ball.vy) < 0.6){ ball.x = player.x + 30; ball.y = player.y; ball.vx = 0; ball.vy = 0; ball.spin = 0; }
+
+      // ball physics with spin (curve effect)
+      // apply spin as lateral force perpendicular to velocity
+      if(Math.hypot(ball.vx, ball.vy) > 0.01){ const speed = Math.hypot(ball.vx, ball.vy); const nx = -ball.vy/speed; const ny = ball.vx/speed; ball.vx += nx * ball.spin * 0.12 * dt * 60; ball.vy += ny * ball.spin * 0.12 * dt * 60; }
+      ball.x += ball.vx * dt * 60; ball.y += ball.vy * dt * 60; ball.vx *= ball.friction; ball.vy *= ball.friction; ball.spin *= 0.996;
+      // small ground friction
+      if(Math.abs(ball.vx) < 0.02) ball.vx = 0; if(Math.abs(ball.vy) < 0.02) ball.vy = 0;
+      // bounds
+      if(ball.x < ball.r) { ball.x = ball.r; ball.vx *= -0.45; ball.spin *= 0.6; }
+      if(ball.y < ball.r) { ball.y = ball.r; ball.vy *= -0.45; ball.spin *= 0.6; }
+      if(ball.y > H - ball.r) { ball.y = H - ball.r; ball.vy *= -0.45; ball.spin *= 0.6; }
+
+      // keeper and save
+      updateKeeper(dt);
+      const kdx = ball.x - keeper.x; const kdy = ball.y - keeper.y;
+      if(Math.hypot(kdx,kdy) < keeper.reach){ // saved
+        ball.vx = -Math.abs(ball.vx) * 0.6 - 1.2; ball.vy *= 0.6; ball.spin *= 0.6;
+      }
+
+      // goal check
+      if(checkGoal()){
+        const close = Math.hypot(ball.x - keeper.x, ball.y - keeper.y) < keeper.reach + 12;
+        if(!close){ score++; scoreEl.textContent = score; playGoal(); spawnConfetti(); // reset ball
+          setTimeout(()=>{ ball.x = player.x + 30; ball.y = player.y; ball.vx = ball.vy = ball.spin = 0; }, 350);
+        } else { ball.vx = -Math.abs(ball.vx) * 0.6; ball.vy *= 0.6; }
+      }
+    }
+
+    // Draw scene with Portugal colors
+    function draw(){ ctx.clearRect(0,0,W,H);
+      // grass stripes
+      const stripeW = 40; for(let i=0;i<Math.ceil(W/stripeW);i++){ ctx.fillStyle = i%2? '#0a6b3f':'#0b8f4f'; ctx.fillRect(i*stripeW,0,stripeW,H); }
+      // center line
+      ctx.fillStyle = '#fff4'; ctx.fillRect(W/2-1,0,2,H);
+      // goal area
+      ctx.fillStyle = '#ffffff22'; ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.strokeRect(goal.x-2, goal.y, goal.w+4, goal.h);
+
+      // draw small Portugal flag in HUD (left red, right green)
+      ctx.fillStyle = '#d62828'; ctx.fillRect(12,8,24,14); ctx.fillStyle = '#06b873'; ctx.fillRect(12+24,8,24,14);
+      ctx.fillStyle = '#fff9'; ctx.font = '14px sans-serif'; ctx.fillText('Portugal National Team', 12+52, 20);
+
+      // player (Portugal: red shirt, green shorts)
+      // draw legs (green)
+      ctx.fillStyle = '#06b873'; ctx.beginPath(); ctx.ellipse(player.x, player.y + 10, player.r*0.6, player.r*0.4, 0, 0, Math.PI*2); ctx.fill();
+      // shirt (red)
+      ctx.fillStyle = '#d62828'; ctx.beginPath(); ctx.arc(player.x, player.y-2, player.r, Math.PI, 0); ctx.fill();
+      // head
+      ctx.fillStyle = '#f7e6d6'; ctx.beginPath(); ctx.arc(player.x, player.y-18, player.r*0.45, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#062'; ctx.fillRect(player.x-3, player.y-20, 6, 6);
+
+      // ball (with a small marking)
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#0008'; ctx.stroke();
+      ctx.fillStyle='#d62828'; ctx.font='10px sans-serif'; ctx.fillText('⚽', ball.x-6, ball.y+4);
+
+      // keeper (Portugal keeper color: dark green shirt)
+      ctx.fillStyle = '#083d2d'; ctx.fillRect(keeper.x-16, keeper.y-28, 32, 56);
+      ctx.fillStyle = '#fff9'; ctx.fillRect(keeper.x-4, keeper.y-6, 8, 8);
+      // keeper name under keeper
+      ctx.fillStyle = '#fff9'; ctx.font='12px sans-serif'; ctx.fillText(keeper.name, keeper.x-44, keeper.y+40);
+
+      // aim line
+      if(aiming){ ctx.strokeStyle = '#fff9'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(ball.x, ball.y); ctx.lineTo(aim.ax, aim.ay); ctx.stroke(); }
+
+      // HUD level
+      ctx.fillStyle = '#fff9'; ctx.font = '14px sans-serif'; ctx.fillText('Level: '+levelSelect.value, W-140, 20);
+
+      // draw confetti on top
+      if(confetti.length) drawConfetti(1/60);
+    }
+
+    // Main loop
+    let last = performance.now();
+    function loop(ts){ if(!running) return; const dt = Math.min(0.04, (ts-last)/1000); last = ts; step(dt); draw(); requestAnimationFrame(loop); }
+
+    // Initialize
+    resetGame(); draw();
+
+    // expose reset for console
+    window.Soccer = { reset: resetGame };
+
+  </script>
+</body>
+</html>
