@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+</head>  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title></title>Physics Quiz ⚛️</title>
+  <style>
+</style>    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Segoe UI,Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#021024,#113046);color:#fff;padding:18px}
+    .card{width:100%;max-width:820px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border-radius:14px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    h1{font-size:1.4rem;margin-bottom:6px;color:#90be6d}
+    p.lead{opacity:0.9;margin-bottom:12px}
+    .top{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+    .qwrap{margin-top:16px}
+    .question{font-size:1.2rem;margin-bottom:12px}
+    .choices{display:grid;grid-template-columns:1fr;gap:10px}
+    @media(min-width:560px){.choices{grid-template-columns:1fr 1fr}}
+    .choice{background:rgba(255,255,255,0.04);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;font-weight:700}
+    .choice.correct{background:linear-gradient(90deg,#90ee90,#4cc9f0);color:#062}
+    .choice.wrong{background:linear-gradient(90deg,#ff9f9f,#ffb3b3);color:#600}
+    .controls{display:flex;gap:8px;margin-top:14px;align-items:center}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+    .btn.next{background:#4cc9f0;color:#062}
+    .btn.restart{background:#ffd166;color:#062}
+    .meta{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap}
+    footer{margin-top:14px;text-align:center;opacity:0.8}
+    a.link{color:#90be6d;text-decoration:none;font-weight:700}
+  </style>
+</head>
+<body>
+</body>  <div class="card">
+    <div class="top">
+      <div>
+       </div> <h1>Physics Quiz ⚛️</h1></h1>
+        <p class="lead">Short kid-friendly physics questions about motion, forces and energy. No timer — learn at your own pace.</p>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <label style="font-weight:700">Topic:
+            <select id="topic" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+              <option value="all">All</option>
+              <option value="motion">Motion</option>
+              <option value="forces">Forces</option>
+              <option value="energy">Energy</option>
+            </select>
+          </label>
+          <button id="readBtn" class="btn" style="background:#90be6d;color:#062;">🔊 Read Aloud</button>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="score">Score: <span id="score">0</span></div>
+      </div>
+    </div>
+
+    <div class="qwrap">
+      <div class="question" id="question">Ready?</div>
+      <div class="choices" id="choices"></div>
+      <div id="explain" style="margin-top:10px;opacity:0.9;font-size:0.95rem;min-height:28px"></div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;background:rgba(255,255,255,0.06);height:12px;border-radius:8px;overflow:hidden"><div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#4cc9f0,#90be6d)"></div></div>
+        <div style="min-width:72px;text-align:right;font-weight:700" id="progressText">0/0</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn next" id="btn-next">Next ▶</button>
+      <button class="btn restart" id="btn-restart">Restart ⟲</button>
+      <div style="margin-left:auto" id="feedback"></div>
+    </div>
+
+    <div class="meta">
+      <div>Streak: <span id="st</div>reak">0</span></div>
+      <div>Best: <span id="best">0</span</div>></div>
+      <div><a class="link" href="index.html">🏠 Home</a></div>
+    </div>
+    <footer>Simple and fun — perfect for a 4th grader! 😊</footer>
+  </div>
+
+  <</footer>canvas id="confetti" style="position:fixed;left:0;top:0;pointer-events:none;z-index:9999"></canvas>
+
+<script>
+// Physics quiz content</script> (kid-level)
+const QUIZ=[
+  {q:'What makes a ball roll faster on a smooth road or a bumpy road?', c:['Smooth road','Bumpy road','Both same','Depends on color'], a:0, explain:'A smooth road has less friction so the ball can roll faster.', topic:'motion'},
+  {q:'Which way does gravity pull things?', c:['Up','Sideways','Down','It pushes'], a:2, explain:'Gravity pulls objects toward the ground (down).', topic:'forces'},
+  {q:'What do we measure in meters?', c:['Weight','Length','Temperature','Time'], a:1, explain:'Meters measure length or distance.', topic:'motion'},
+  {q:'If you push a toy car, what does it do?', c:['Stops','Moves','Disappears','Grows'], a:1, explain:'A push makes the car move — that is a force making motion.', topic:'forces'},
+  {q:'Which is a source of energy?', c:['Battery','Chair','Stone','Table'], a:0, explain:'A battery stores energy you can use to run toys.', topic:'energy'},
+  {q:'What is friction?', c:['A force that slows things','A color','A sound','A smell'], a:0, explain:'Friction is a force between two surfaces that slows motion.', topic:'forces'},
+  {q:'Which is faster: a bicycle or a rocket?', c:['Bicycle','Rocket','Both same','Neither'], a:1, explain:'A rocket goes much faster than a bicycle.', topic:'motion'},
+  {q:'When you lift a box, you use which kind of energy?', c:['Kinetic','Potential','Sound','Light'], a:1, explain:'Lifting gives the box potential energy because of its height.', topic:'energy'},
+  {q:'What happens to speed if you push harder?', c:['Speed up','Slow down','No change','Turn left'], a:0, explain:'A stronger push usually makes an object speed up.', topic:'motion'},
+  {q:'Which object has more mass: a feather or a rock?', c:['Feather','Rock','Both same','Depends'], a:1, explain:'A rock has more mass than a feather.', topic:'forces'}
+];
+
+let idx=0, score=0, streak=0, best=0, locked=false;
+const qEl=document.getElementById('question');
+const choicesEl=document.getElementById('choices');
+const scoreEl=document.getElementById('score');
+const streakEl=document.getElementById('streak');
+const bestEl=document.getElementById('best');
+const explainEl=document.getElementById('explain');
+const progressBar=document.getElementById('progressBar');
+const progressText=document.getElementById('progressText');
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a}
+
+function loadBest(){best = parseInt(localStorage.getItem('physics-best')||'0',10); bestEl.textContent=best}
+loadBest();
+
+let questions=[];
+function buildQuestions(){ const top = document.getElementById('topic').value; const pool = QUIZ.filter(q=> top==='all' || q.topic===top); questions=shuffle(pool.slice()); if(questions.length===0) questions=shuffle(QUIZ.slice()); updateProgress();}
+
+function updateProgress(){ progressText.textContent = (idx+1) + '/' + Math.max(1,questions.length); progressBar.style.width = ((idx)/Math.max(1,questions.length))*100 + '%'; }
+
+function showQuestion(){ locked=false; explainEl.textContent=''; const q = questions[idx]; qEl.textContent = (idx+1)+'. '+q.q; choicesEl.innerHTML=''; q.c.forEach((txt,i)=>{const b=document.createElement('button'); b.className='choice'; b.textContent=txt; b.onclick=()=>choose(i,b); choicesEl.appendChild(b);}); updateProgress(); }
+
+// confetti
+const confettiCanvas=document.getElementById('confetti'); const cc = confettiCanvas.getContext?confettiCanvas.getContext('2d'):null; function resizeConf(){confettiCanvas.width=window.innerWidth; confettiCanvas.height=window.innerHeight;} window.addEventListener('resize', resizeConf); resizeConf(); let confetti=[]; function spawnConfetti(){ for(let i=0;i<36;i++){confetti.push({x:window.innerWidth/2 + (Math.random()*200-100), y:window.innerHeight/2 + (Math.random()*80-40), vx:(Math.random()*6-3), vy:(Math.random()*-6-1), r:Math.random()*5+2, c:['#90be6d','#ffd166','#4cc9f0'][Math.floor(Math.random()*3)], life:1}); } if(!confettiLoop) confettiLoop=setInterval(drawConfetti,40);} var confettiLoop=null; function drawConfetti(){ if(!cc) return; cc.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); for(let i=confetti.length-1;i>=0;i""--){const p=confetti[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.24; p.life-=0.028; cc.globalAlpha = Math.max(0,p.life); cc.fillStyle=p.c; cc.beginPath(); cc.arc(p.x,p.y,p.r,0,Math.PI*2); cc.fill(); if(p.life<=0) confetti.splice(i,1);} if(confetti.length===0 && confettiLoop){clearInterval(confettiLoop); confettiLoop=null;} }
+
+function choose(i,but){ if(locked) return; locked=true; const q=questions[idx]; if(i===q.a){ but.classList.add('correct'); score+=10; streak++; feedback('Good! +10'); spawnConfetti(); } else { but.classList.add('wrong'); feedback('Try next'); revealAnswer(); } scoreEl.textContent=score; streakEl.textContent=streak; if(score>best){best=score; localStorage.setItem('physics-best',best); bestEl.textContent=best;} setTimeout(()=>{ idx++; if(idx>=questions.length){ finish(); } else { showQuestion(); } },900);
+}
+function revealAnswer(){ const q=questions[idx]; const buttons = choicesEl.querySelectorAll('.choice'); buttons.forEach((b,i)=>{ if(i===q.a) b.classList.add('correct'); }); explainEl.textContent = q.explain || ''; streak = 0; }
+function finish(){ qEl.textContent='Quiz finished!'; choicesEl.innerHTML=''; feedback('You scored '+score); }
+
+function speakText(text){ try{ if('speechSynthesis' in window){ const u=new SpeechSynthesisUtterance(text); u.rate=0.95; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);} }catch(e){} }
+
+function restart(){ buildQuestions(); idx=0; score=0; streak=0; scoreEl.textContent=score; streakEl.textContent=streak; showQuestion(); }
+
+document.getElementById('readBtn').addEventListener('click', ()=>{ const q=questions[idx]; if(q){ speakText(q.q + '. Choices: ' + q.c.join(', ')); }});
+document.getElementById('btn-next').addEventListener('click', ()=>{ if(!locked){ revealAnswer(); locked=true; setTimeout(()=>{ idx++; if(idx>=questions.length) finish(); else showQuestion(); },800);} else { idx++; if(idx>=questions.length) finish(); else showQuestion(); }});
+document.getElementById('btn-restart').addEventListener('click', restart);
+
+// start
+buildQuestions(); restart();
+</script>
+</body>
+</html>
