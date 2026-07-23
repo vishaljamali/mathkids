@@ -183,13 +183,23 @@
       </div>
     </a>
 
-    <a class="game-btn math-btn" href="soccer-game.html">
+    <a class="game-btn math-btn" href="soccer-game.html" id="soccerCard">
       <div class="icon">⚽</div>
       <div class="text">
         <div class="name">Soccer Skill</div>
         <div class="desc">Aim and shoot past the goalkeeper · realistic physics · mobile controls.</div>
       </div>
     </a>
+    <script>
+</script>      // show an achievements badge on the soccer card if there are soccer badges
+      try{
+        const badgeKey = localStorage.getItem('soccer-badges');
+        if(badgeKey && badgeKey !== '{}' ){
+          const a = document.getElementById('soccerCard');
+          if(a){ const b = document.createElement('span'); b.textContent = '🏅 New!'; b.style.cssText = 'background:linear-gradient(90deg,#ffd166,#90be6d);color:#062;padding:6px 8px;border-radius:10px;font-weight:800;margin-left:8px;display:inline-block;'; const textDiv = a.querySelector('.text'); if(textDiv) textDiv.appendChild(b); }
+        }
+      }catch(e){}
+    </script>
 
     <a class="game-btn math-btn" href="english-quiz.html">
       <div class="icon">📚</div>
