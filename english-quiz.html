@@ -65,6 +65,10 @@
       <div class="question" id="question">Ready?</div>
       <div class="choices" id="choices"></div>
       <div id="explain" style="margin-top:10px;opacity:0.9;font-size:0.95rem;min-height:28px"></div>
+      <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
+        <div style="flex:1;background:rgba(255,255,255,0.06);height:12px;border-radius:8px;overflow:hidden"><div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#4cc9f0,#90be6d)"></div></div>
+        <div style="min-width:72px;text-align:right;font-weight:700" id="progressText">0/0</div>
+      </div>
     </div>
 
     <div class="controls">
@@ -165,12 +169,35 @@ function feedback(msg,cls){ feedbackEl.textContent=msg; }
 function tone(f,type,dur,vol){try{const ac = new (window.AudioContext||window.webkitAudioContext)(); const o=ac.createOscillator(); const g=ac.createGain(); o.type=type; o.frequency.value=f; g.gain.setValueAtTime(vol||0.12, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); setTimeout(()=>{try{ac.close()}catch(e){}},(dur+0.05)*1000);}catch(e){}}
 const SFX={ pickup:()=>tone(520,'sine',0.08,0.12), }
 
+// badges & stats
+const BADGES=[
+  {id:'vocab_star',name:'Vocab Star',desc:'Score ≥ 80 in a vocab quiz',check:st=>st.score>=80 && st.cat==='vocab'},
+  {id:'grammar_pro',name:'Grammar Pro',desc:'Score ≥ 80 in a grammar quiz',check:st=>st.score>=80 && st.cat==='grammar'},
+  {id:'spelling_master',name:'Spelling Master',desc:'Score ≥ 80 in a spelling quiz',check:st=>st.score>=80 && st.cat==='spelling'},
+  {id:'quiz_runner',name:'Quiz Runner',desc:'Complete 10 quizzes',check:st=>st.totalPlayed>=10},
+  {id:'apex_conqueror',name:'Apex Conqueror',desc:'Beat Level 10 in Dino Blaster',check:st=>localStorage.getItem('dino-apex-beaten')==='1'}
+];
+
+function loadStats(){try{const s=JSON.parse(localStorage.getItem('english-stats')||'{}');return {totalPlayed:s.totalPlayed||0,badges:s.badges||{}};}catch(e){return {totalPlayed:0,badges:{}};}}
+function saveStats(st){try{localStorage.setItem('english-stats',JSON.stringify(st));}catch(e){}
+}
+let stats = loadStats();
+
+function awardBadgesForRun(cat,score){ stats.totalPlayed = (stats.totalPlayed||0)+1; const run = {cat,score,totalPlayed:stats.totalPlayed}; BADGES.forEach(b=>{ try{ if(b.check(run) && !stats.badges[b.id]){ stats.badges[b.id]=1; } }catch(e){} }); saveStats(stats); }
+
+function showBadgeModal(){ const badges = Object.keys(stats.badges||{}); let txt='No badges yet.'; if(badges.length) txt = badges.map(id=>{const b=BADGES.find(x=>x.id===id); return b?('🏅 '+b.name+': '+b.desc):id}).join('\n'); alert('Badges:\n'+txt); }
+
+// controls
+const exportBtn = document.getElementById('exportBtn'); const importBtn = document.getElementById('importBtn');
+if(exportBtn){exportBtn.addEventListener('click', ()=>{ const data = {appearance,apexMode,l10HpMul:l10HpMul*100,l10ProjMul:l10ProjMul*100,breathVolume,breathSpeed,currentDifficulty,practiceMode}; const txt = JSON.stringify(data,null,2); prompt('Copy your settings JSON:', txt); });}
+if(importBtn){importBtn.addEventListener('click', ()=>{ const txt = prompt('Paste settings JSON to import:'); try{const data = JSON.parse(txt); if(data.appearance) appearance=data.appearance; if(data.apexMode) apexMode=data.apexMode; if(data.l10HpMul) l10HpMul = data.l10HpMul/100; if(data.l10ProjMul) l10ProjMul = data.l10ProjMul/100; if(typeof data.breathVolume!=='undefined') breathVolume = data.breathVolume; if(data.breathSpeed) breathSpeed = data.breathSpeed; if(data.currentDifficulty) currentDifficulty=data.currentDifficulty; if(typeof data.practiceMode!=='undefined') practiceMode=!!data.practiceMode; applyDifficulty(); alert('Settings imported'); }catch(e){alert('Invalid JSON');} });}
+
 // controls
 document.getElementById('btn-next').addEventListener('click', ()=>{ if(!locked){ clearInterval(tid); onTimeUp(); } else { nextQuestion(); }});
 document.getElementById('btn-restart').addEventListener('click', restart);
 
 // start on load
-restart();
+buildQuestions(); restart();
 </script>
 </body>
 </html>
