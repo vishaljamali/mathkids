@@ -1436,6 +1436,54 @@ function loop(ts){
         try{window.unlockSound = unlockSound; window.startGame = startGame; window.resetGame = resetGame;}catch(e){}
 
         requestAnimationFrame(loop);
+        </script>
+
+    <!-- Debug overlay for audio state (shows AC state and allows force-enable) -->
+    <style>
+      #audio-debug{position:fixed;left:12px;bottom:12px;background:rgba(0,0,0,0.6);color:#fff;padding:8px;border-radius:8px;font-family:Segoe UI, sans-serif;font-size:13px;z-index:10000;max-width:260px}
+      #audio-debug button{margin-top:6px;padding:6px 8px;border-radius:6px;border:none;background:#ffd166;color:#0b0a1e;font-weight:700;cursor:pointer}
+      #audio-debug small{display:block;color:rgba(255,255,255,0.7);margin-top:6px}
+    </style>
+    <div id="audio-debug" aria-hidden="false">
+      <div><strong>Audio Debug</strong></div>
+      <div id="ad-state">AC: ?</div>
+      <div id="ad-unlocked">Unlocked: ?</div>
+      <div id="ad-muted">Muted: ?</div>
+      <div id="ad-src">Audio src: ?</div>
+      <button id="ad-force">Force enable sound</button>
+      <small>Click the big button, then Start to play sounds. Use this only to debug.</small>
+    </div>
+
+    <script>
+      const _adState = document.getElementById('ad-state');
+      const _adUnlocked = document.getElementById('ad-unlocked');
+      const _adMuted = document.getElementById('ad-muted');
+      const _adSrc = document.getElementById('ad-src');
+      const _adBtn = document.getElementById('ad-force');
+      function refreshAudioDebug(){
+        try{
+          _adState.textContent = 'AC: '+(typeof _ac!=='undefined' && _ac? _ac.state : 'null');
+          _adUnlocked.textContent = 'Unlocked: '+(!!soundUnlocked);
+          _adMuted.textContent = 'Muted: '+(!!muted);
+          const aL = document.getElementById('audioLife'), aA = document.getElementById('audioApex');
+          _adSrc.textContent = 'Life src: '+(aL&&aL.src?aL.src.split('/').pop():'(none)') + ' | Apex src: '+(aA&&aA.src?aA.src.split('/').pop():'(none)');
+        }catch(e){}
+      }
+      setInterval(refreshAudioDebug,400);
+      _adBtn.addEventListener('click', async function(){
+        try{
+          // resume AC and play a short test sound
+          try{await getAC().resume();}catch(e){}
+          soundUnlocked = true; _adUnlocked.textContent='Unlocked: true';
+          // try external audio or generated blob
+          tryPlayAudio('audioLife', ()=>{ try{SFX.lifePickup();}catch(e){} });
+          // small visual feedback
+          for(let i=0;i<6;i++) setTimeout(()=>explode(cat.x+rnd(-20,20),cat.y+rnd(-20,20),false), i*80);
+        }catch(e){console.error('force enable failed',e);}  
+      });
+      // also let clicking the overlay hide it for convenience when debug complete
+      _adState.addEventListener('dblclick',()=>{document.getElementById('audio-debug').style.display='none';});
     </script>
-</body>
-</html>
+
+    </body>
+    </html>
