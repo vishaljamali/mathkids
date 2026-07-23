@@ -63,6 +63,9 @@
     <div class="controls">
       <button class="btn next" id="btn-next">Next ▶</button>
       <button class="btn restart" id="btn-restart">Restart ⟲</button>
+      <button class="btn" id="exportBtn" style="background:#90be6d;color:#062;margin-left:10px">Export</button>
+      <button class="btn" id="importBtn" style="background:#ffd166;color:#062">Import</button>
+      <button class="btn" id="showBadges" style="background:#4cc9f0;color:#062">Badges</button>
       <div style="margin-left:auto" id="feedback"></div>
     </div>
 
@@ -88,7 +91,15 @@ const QUIZ=[
   {q:'Which is faster: a bicycle or a rocket?', c:['Bicycle','Rocket','Both same','Neither'], a:1, explain:'A rocket goes much faster than a bicycle.', topic:'motion'},
   {q:'When you lift a box, you use which kind of energy?', c:['Kinetic','Potential','Sound','Light'], a:1, explain:'Lifting gives the box potential energy because of its height.', topic:'energy'},
   {q:'What happens to speed if you push harder?', c:['Speed up','Slow down','No change','Turn left'], a:0, explain:'A stronger push usually makes an object speed up.', topic:'motion'},
-  {q:'Which object has more mass: a feather or a rock?', c:['Feather','Rock','Both same','Depends'], a:1, explain:'A rock has more mass than a feather.', topic:'forces'}
+  {q:'Which object has more mass: a feather or a rock?', c:['Feather','Rock','Both same','Depends'], a:1, explain:'A rock has more mass than a feather.', topic:'forces'},
+  // more questions
+  {q:'If you drop two objects of different weight, which hits the ground first (ignoring air)?', c:['Heavier first','Lighter first','Both same','Depends on color'], a:2, explain:'In vacuum they fall at the same rate — same acceleration due to gravity.', topic:'motion'},
+  {q:'What is the unit of force?', c:['Newton','Watt','Joule','Meter'], a:0, explain:'Force is measured in Newtons (N).', topic:'forces'},
+  {q:'Energy that comes from the sun is called?', c:['Thermal','Solar','Kinetic','Magnetic'], a:1, explain:'Energy from the sun is called solar energy.', topic:'energy'},
+  {q:'What happens to energy when you stop a moving toy?', c:['It disappears','It becomes heat','It becomes a color','It turns to sound only'], a:1, explain:'Energy is conserved; some becomes heat (and sound).', topic:'energy'},
+  {q:'Which surface gives more friction: ice or sandpaper?', c:['Ice','Sandpaper','Both same','None'], a:1, explain:'Sandpaper has more friction than ice.', topic:'forces'},
+  {q:'Speed is distance divided by what?', c:['Time','Mass','Area','Volume'], a:0, explain:'Speed = distance / time.', topic:'motion'},
+  {q:'Which energy is stored in a stretched rubber band?', c:['Kinetic','Thermal','Elastic potential','Chemical'], a:2, explain:'A stretched band stores elastic potential energy.', topic:'energy'}
 ];
 
 let idx=0, score=0, streak=0, best=0, locked=false;
@@ -116,10 +127,24 @@ function showQuestion(){ locked=false; explainEl.textContent=''; const q = quest
 // confetti
 const confettiCanvas=document.getElementById('confetti'); const cc = confettiCanvas.getContext?confettiCanvas.getContext('2d'):null; function resizeConf(){confettiCanvas.width=window.innerWidth; confettiCanvas.height=window.innerHeight;} window.addEventListener('resize', resizeConf); resizeConf(); let confetti=[]; function spawnConfetti(){ for(let i=0;i<36;i++){confetti.push({x:window.innerWidth/2 + (Math.random()*200-100), y:window.innerHeight/2 + (Math.random()*80-40), vx:(Math.random()*6-3), vy:(Math.random()*-6-1), r:Math.random()*5+2, c:['#90be6d','#ffd166','#4cc9f0'][Math.floor(Math.random()*3)], life:1}); } if(!confettiLoop) confettiLoop=setInterval(drawConfetti,40);} var confettiLoop=null; function drawConfetti(){ if(!cc) return; cc.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); for(let i=confetti.length-1;i>=0;i""--){const p=confetti[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.24; p.life-=0.028; cc.globalAlpha = Math.max(0,p.life); cc.fillStyle=p.c; cc.beginPath(); cc.arc(p.x,p.y,p.r,0,Math.PI*2); cc.fill(); if(p.life<=0) confetti.splice(i,1);} if(confetti.length===0 && confettiLoop){clearInterval(confettiLoop); confettiLoop=null;} }
 
-function choose(i,but){ if(locked) return; locked=true; const q=questions[idx]; if(i===q.a){ but.classList.add('correct'); score+=10; streak++; feedback('Good! +10'); spawnConfetti(); } else { but.classList.add('wrong'); feedback('Try next'); revealAnswer(); } scoreEl.textContent=score; streakEl.textContent=streak; if(score>best){best=score; localStorage.setItem('physics-best',best); bestEl.textContent=best;} setTimeout(()=>{ idx++; if(idx>=questions.length){ finish(); } else { showQuestion(); } },900);
+function choose(i,but){ if(locked) return; locked=true; const q=questions[idx]; if(i===q.a){ but.classList.add('correct'); score+=10; streak++; feedback('Good! +10'); spawnConfetti(); } else { but.classList.add('wrong'); feedback('Try next'); revealAnswer(); } scoreEl.textContent=score; streakEl.textContent=streak; // award badges/stats per run when finished
+  setTimeout(()=>{ idx++; if(idx>=questions.length){ finish(); awardRunStats(); } else { showQuestion(); } },900);
 }
 function revealAnswer(){ const q=questions[idx]; const buttons = choicesEl.querySelectorAll('.choice'); buttons.forEach((b,i)=>{ if(i===q.a) b.classList.add('correct'); }); explainEl.textContent = q.explain || ''; streak = 0; }
 function finish(){ qEl.textContent='Quiz finished!'; choicesEl.innerHTML=''; feedback('You scored '+score); }
+
+// badges & stats for physics
+const P_BADGES=[
+  {id:'motion_master',name:'Motion Master',desc:'Score ≥ 80 in a motion quiz',check:st=>st.score>=80 && st.topic==='motion'},
+  {id:'forces_hero',name:'Forces Hero',desc:'Score ≥ 80 in a forces quiz',check:st=>st.score>=80 && st.topic==='forces'},
+  {id:'energy_star',name:'Energy Star',desc:'Score ≥ 80 in an energy quiz',check:st=>st.score>=80 && st.topic==='energy'},
+  {id:'physics_runner',name:'Physics Runner',desc:'Complete 10 physics quizzes',check:st=>st.totalPlayed>=10}
+];
+function loadPStats(){ try{const s=JSON.parse(localStorage.getItem('physics-stats')||'{}'); return {totalPlayed:s.totalPlayed||0,badges:s.badges||{}};}catch(e){return {totalPlayed:0,badges:{}};} }
+function savePStats(st){ try{localStorage.setItem('physics-stats',JSON.stringify(st));}catch(e){} }
+let pstats = loadPStats();
+function awardRunStats(){ const topic = document.getElementById('topic').value||'all'; pstats.totalPlayed=(pstats.totalPlayed||0)+1; const run={topic,score,totalPlayed:pstats.totalPlayed}; P_BADGES.forEach(b=>{ try{ if(b.check(run) && !pstats.badges[b.id]) pstats.badges[b.id]=1;}catch(e){} }); savePStats(pstats); }
+function showPBadges(){ const badges=Object.keys(pstats.badges||{}); if(badges.length===0) alert('No badges yet'); else alert('Badges:\n'+badges.map(id=>{const b=P_BADGES.find(x=>x.id===id); return b?('🏅 '+b.name+': '+b.desc):id}).join('\n')); }
 
 function speakText(text){ try{ if('speechSynthesis' in window){ const u=new SpeechSynthesisUtterance(text); u.rate=0.95; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);} }catch(e){} }
 
@@ -128,6 +153,14 @@ function restart(){ buildQuestions(); idx=0; score=0; streak=0; scoreEl.textCont
 document.getElementById('readBtn').addEventListener('click', ()=>{ const q=questions[idx]; if(q){ speakText(q.q + '. Choices: ' + q.c.join(', ')); }});
 document.getElementById('btn-next').addEventListener('click', ()=>{ if(!locked){ revealAnswer(); locked=true; setTimeout(()=>{ idx++; if(idx>=questions.length) finish(); else showQuestion(); },800);} else { idx++; if(idx>=questions.length) finish(); else showQuestion(); }});
 document.getElementById('btn-restart').addEventListener('click', restart);
+
+// export / import settings and badges
+try{
+  const exportBtn = document.getElementById('exportBtn'); const importBtn = document.getElementById('importBtn'); const showBadgesBtn = document.getElementById('showBadges');
+  if(exportBtn) exportBtn.addEventListener('click', ()=>{ const data = {topic:document.getElementById('topic').value}; prompt('Copy settings JSON', JSON.stringify(data,null,2)); });
+  if(importBtn) importBtn.addEventListener('click', ()=>{ const txt = prompt('Paste settings JSON to import:'); try{ const d = JSON.parse(txt); if(d.topic) document.getElementById('topic').value=d.topic; buildQuestions(); alert('Imported'); }catch(e){alert('Invalid JSON');}});
+  if(showBadgesBtn) showBadgesBtn.addEventListener('click', showPBadges);
+}catch(e){}
 
 // start
 buildQuestions(); restart();
