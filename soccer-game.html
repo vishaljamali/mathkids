@@ -60,7 +60,10 @@
 
       <img id="playerPhoto" src="images/portugal1.svg" alt="player photo" style="width:56px;height:56px;border-radius:8px;margin-left:10px;border:2px solid rgba(255,255,255,0.06)" />
 
-      <div style="margin-left:auto" class="hud">Portugal National Team 🇵🇹 &nbsp; Score: <span id="score">0</span> &nbsp;|&nbsp; Shots: <span id="shots">0</span></div>
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center" class="hud"> 
+        <button id="showAchievements" class="btn" style="background:#4cc9f0;color:#062;padding:8px 10px;border-radius:8px">Achievements</button>
+        <div>Portugal National Team 🇵🇹 &nbsp; Score: <span id="score">0</span> &nbsp;|&nbsp; Shots: <span id="shots">0</span></div>
+      </div>
     </div>
 
     <div class="mobile-controls" aria-hidden="false">
@@ -69,9 +72,9 @@
       <button id="rightBtn" class="touch-btn">▶</button>
     </div>
 
-    <div class="footer">Tip: Drag on the canvas to aim a longer shot. Player shirts use Portugal colors (red shirt, green shorts). Level increases keeper speed.</div>
+  <div class="footer">Tip: Drag on the canvas to aim a longer shot. Player shirts use Portugal colors (red shirt, green shorts). Level increases keeper speed.</div>
 
-    <div id="credits" style="margin-top:12px;font-size:12px;opacity:0.85">
+  <div id="credits" style="margin-top:12px;font-size:12px;opacity:0.85">
       <strong>Photo credits (Wikimedia Commons):</strong>
       <ul>
         <li><a href="https://commons.wikimedia.org/wiki/File:Cristiano_Ronaldo.jpg" target="_blank">Cristiano Ronaldo</a> — CC BY 2.0</li>
@@ -86,6 +89,16 @@
         <li><a href="https://commons.wikimedia.org/wiki/File:The_dive_of_Rui_Patricio.jpg" target="_blank">Rui Patrício</a> — Commons</li>
       </ul>
     </div>
+
+    <!-- Achievements modal -->
+    <div id="achModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;z-index:9999">
+      <div style="background:#071428;color:#fff;border-radius:12px;padding:14px;max-width:520px;width:94%;text-align:left;box-shadow:0 10px 40px rgba(0,0,0,0.6);">
+        <h3 style="margin-top:0;margin-bottom:8px">Achievements 🏅</h3>
+        <div id="achList" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        <div style="text-align:right;margin-top:10px"><button id="closeAch" style="padding:8px 12px;border-radius:8px;background:#4cc9f0;color:#062;border:none;font-weight:700">Close</button></div>
+      </div>
+    </div>
+
   </div>
 
   <script>
@@ -220,16 +233,49 @@
       // keeper and save
       updateKeeper(dt);
       const kdx = ball.x - keeper.x; const kdy = ball.y - keeper.y;
-      if(Math.hypot(kdx,kdy) < keeper.reach){ // saved
+      // use effective reach (L10 harder)
+      const levelNow = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10)));
+      const reachEffNow = keeper.reach * (levelNow===10?1.35:1);
+      if(Math.hypot(kdx,kdy) < reachEffNow){ // saved
         ball.vx = -Math.abs(ball.vx) * 0.6 - 1.2; ball.vy *= 0.6; ball.spin *= 0.6;
       }
 
       // goal check
       if(checkGoal()){
-        const close = Math.hypot(ball.x - keeper.x, ball.y - keeper.y) < keeper.reach + 12;
-        if(!close){ score++; scoreEl.textContent = score; playGoal(); spawnConfetti(); // reset ball
+        const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10)));
+        const reachEff = keeper.reach * (level===10?1.35:1);
+        const close = Math.hypot(ball.x - keeper.x, ball.y - keeper.y) < reachEff + 12;
+        if(!close){
+          // goal scored
+          score++; scoreEl.textContent = score; playGoal(); spawnConfetti();
+          // record per-player goals and award achievements
+          try{
+            const pid = parseInt(playerSelect.value||'1',10);
+            const key = 'soccer-goals';
+            const store = JSON.parse(localStorage.getItem(key)||'{}');
+            store[pid] = (store[pid]||0) + 1;
+            localStorage.setItem(key, JSON.stringify(store));
+            // overall goals
+            const totalKey = 'soccer-total-goals';
+            const tot = parseInt(localStorage.getItem(totalKey)||'0',10) + 1;
+            localStorage.setItem(totalKey, tot);
+            // badges
+            const badges = JSON.parse(localStorage.getItem('soccer-badges')||'{}');
+            const count = store[pid];
+            if(count===1 && !badges['first-'+pid]){ badges['first-'+pid]=1; showBadge('First Goal!','You scored your first goal with this player!'); }
+            if(count===5 && !badges['5-'+pid]){ badges['5-'+pid]=1; showBadge('Player Striker','5 goals with this player!'); }
+            if(count===10 && !badges['10-'+pid]){ badges['10-'+pid]=1; showBadge('Legend','10 goals with this player!'); }
+            if(tot===5 && !badges['total-5']){ badges['total-5']=1; showBadge('Hot Streak','5 total goals!'); }
+            if(tot===20 && !badges['total-20']){ badges['total-20']=1; showBadge('Goal Machine','20 total goals!'); }
+            localStorage.setItem('soccer-badges', JSON.stringify(badges));
+          }catch(e){}
+
+          // reset ball
           setTimeout(()=>{ ball.x = player.x + 30; ball.y = player.y; ball.vx = ball.vy = ball.spin = 0; }, 350);
-        } else { ball.vx = -Math.abs(ball.vx) * 0.6; ball.vy *= 0.6; }
+        } else {
+          // keeper saved
+          ball.vx = -Math.abs(ball.vx) * 0.6; ball.vy *= 0.6;
+        }
       }
     }
 
@@ -275,6 +321,20 @@
       // draw confetti on top
       if(confetti.length) drawConfetti(1/60);
     }
+
+    // Achievements helpers
+    function showBadge(title, msg){ try{ const modal = document.getElementById('achModal'); if(modal){ // create a temporary toast in modal list
+          const list = document.getElementById('achList'); const el = document.createElement('div'); el.style.cssText='background:linear-gradient(90deg,#ffd166,#90be6d);padding:8px;border-radius:8px;color:#062;font-weight:800;min-width:160px'; el.innerHTML=`<div style="font-weight:900">🏅 ${title}</div><div style="font-size:12px;opacity:0.9">${msg}</div>`; list.insertBefore(el, list.firstChild); // also open modal briefly
+          document.getElementById('achModal').style.display='flex'; setTimeout(()=>{ try{ document.getElementById('achModal').style.display='flex'; }catch(e){} },100);
+          // auto-close after 4s
+          setTimeout(()=>{ try{ if(modal.style.display==='flex') modal.style.display='none'; }catch(e){} },4000);
+        }}catch(e){}
+    }
+    function loadAchievements(){ try{ const b = JSON.parse(localStorage.getItem('soccer-badges')||'{}'); const list = document.getElementById('achList'); list.innerHTML=''; const mapNames = {1:'Rui Patrício',2:'Cristiano Ronaldo',3:'Bruno Fernandes',4:'Bernardo Silva',5:'João Félix',6:'Rúben Dias',7:'Pepe',8:'Diogo Jota',9:'João Cancelo',10:'Rúben Neves'}; for(const k in b){ const el = document.createElement('div'); el.style.cssText='background:linear-gradient(90deg,#1f2b3a,#12202a);padding:8px;border-radius:8px;color:#fff;min-width:160px'; if(k.startsWith('first-')){ const id=k.split('-')[1]; el.innerHTML=`🏅 First Goal with ${mapNames[id]||'Player'}`; } else if(k.startsWith('5-')){ const id=k.split('-')[1]; el.innerHTML=`🏅 5 goals with ${mapNames[id]||'Player'}`; } else if(k.startsWith('10-')){ const id=k.split('-')[1]; el.innerHTML=`🏆 10 goals with ${mapNames[id]||'Player'}`; } else if(k==='total-5'){ el.innerHTML='🏅 5 total goals'; } else if(k==='total-20'){ el.innerHTML='🏆 20 total goals'; } list.appendChild(el); } }catch(e){}
+    }
+
+    document.getElementById('showAchievements').addEventListener('click', ()=>{ loadAchievements(); document.getElementById('achModal').style.display='flex'; });
+    document.getElementById('closeAch').addEventListener('click', ()=>{ document.getElementById('achModal').style.display='none'; });
 
     // Main loop
     let last = performance.now();
