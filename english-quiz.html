@@ -125,6 +125,9 @@ const streakEl=document.getElementById('streak');
 const bestEl=document.getElementById('best');
 const feedbackEl=document.getElementById('feedback');
 const explainEl=document.getElementById('explain');
+// no-timer mode: disable automatic countdown (user requested no timer)
+const USE_TIMER = false;
+if(!USE_TIMER && timerEl){ timerEl.parentElement.style.display='none'; }
 
 // session questions
 let questions = [];
@@ -135,7 +138,10 @@ function loadBestFor(diff){best = parseInt(localStorage.getItem('english-best-'+
 
 function buildQuestions(){ const cat = document.getElementById('category').value; const diff = document.getElementById('difficulty').value; const pool = QUIZ.filter(q=> (cat==='all'||q.cat===cat) && (diff==='all' || q.diff===diff)); questions = shuffle(pool.slice()); if(questions.length===0) questions = shuffle(QUIZ.slice()); loadBestFor(diff);}
 
-function startTimer(){timer=20; timerEl.textContent=timer; if(tid)clearInterval(tid); tid=setInterval(()=>{timer--; timerEl.textContent=timer; if(timer<=0){clearInterval(tid); onTimeUp();}},1000);} 
+function startTimer(){
+  if(!USE_TIMER) return; // disabled
+  timer=20; timerEl.textContent=timer; if(tid)clearInterval(tid); tid=setInterval(()=>{timer--; timerEl.textContent=timer; if(timer<=0){clearInterval(tid); onTimeUp();}},1000);
+}
 
 function onTimeUp(){ if(locked) return; locked=true; feedback('Time!','wrong'); revealAnswer(null); setTimeout(nextQuestion,900);} 
 
@@ -193,7 +199,17 @@ if(exportBtn){exportBtn.addEventListener('click', ()=>{ const data = {appearance
 if(importBtn){importBtn.addEventListener('click', ()=>{ const txt = prompt('Paste settings JSON to import:'); try{const data = JSON.parse(txt); if(data.appearance) appearance=data.appearance; if(data.apexMode) apexMode=data.apexMode; if(data.l10HpMul) l10HpMul = data.l10HpMul/100; if(data.l10ProjMul) l10ProjMul = data.l10ProjMul/100; if(typeof data.breathVolume!=='undefined') breathVolume = data.breathVolume; if(data.breathSpeed) breathSpeed = data.breathSpeed; if(data.currentDifficulty) currentDifficulty=data.currentDifficulty; if(typeof data.practiceMode!=='undefined') practiceMode=!!data.practiceMode; applyDifficulty(); alert('Settings imported'); }catch(e){alert('Invalid JSON');} });}
 
 // controls
-document.getElementById('btn-next').addEventListener('click', ()=>{ if(!locked){ clearInterval(tid); onTimeUp(); } else { nextQuestion(); }});
+document.getElementById('btn-next').addEventListener('click', ()=>{
+  if(!locked){
+    // question not answered: reveal answer then go next after short pause
+    clearInterval(tid);
+    revealAnswer(null);
+    locked=true;
+    setTimeout(nextQuestion,800);
+  } else {
+    nextQuestion();
+  }
+});
 document.getElementById('btn-restart').addEventListener('click', restart);
 
 // start on load
