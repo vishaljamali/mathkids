@@ -110,6 +110,14 @@
           </select>
           <button id="gotoLevel" style="margin-left:8px;padding:6px 8px;border-radius:8px;background:#ffd166;color:#0b0a1e;border:none;font-weight:700;">Go</button>
         </label>
+        <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+          Apex mode:
+          <select id="apexMode" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+            <option value="normal">Normal</option>
+            <option value="easier">Easier</option>
+            <option value="superhard" selected>Super Hard</option>
+          </select>
+        </label>
         <button id="startBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#4cc9f0;color:#04202a;font-weight:700;">▶ Start</button>
         <button id="resetBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#f3722c;color:#0b0a1e;font-weight:700;">⟲ Reset</button>
         <button id="muteBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#fff;">🔊</button>
@@ -242,11 +250,13 @@ let appearance='normal';
 let roarOnBoss=false; // play special roar when boss spawns/phase2 for fierce skin
 let breathVolume = 0.06; // 0..0.2
 let breathSpeed = 420; // frames between breaths (180..720)
+let apexMode = 'superhard'; // normal | easier | superhard
 
 function applyDifficulty(){
   // update breath settings from controls if present (live)
   try{const bv = document.getElementById('breathVol'); if(bv) breathVolume = parseInt(bv.value,10)/100;}catch(e){}
   try{const bs = document.getElementById('breathSpeed'); if(bs) breathSpeed = parseInt(bs.value,10);}catch(e){}
+  try{const am = document.getElementById('apexMode'); if(am) apexMode = am.value;}catch(e){}
   // build LEVEL_CFG from BASE_LEVEL_CFG applying multipliers
   const diff=currentDifficulty;
   LEVEL_CFG=[null];
@@ -259,11 +269,16 @@ function applyDifficulty(){
     else if(diff==='hard'){hpMul=1.25; speedMul=1.08; spawnMul=0.95; fireMul=0.85; killsMul=0.9}
     // practice mode reduces HP and makes boss appear earlier
     if(practiceMode){hpMul*=0.55; killsMul*=0.6; spawnMul*=1.1;}
+    // special apex mode adjustments (only affects level 10)
+    if(i===10){
+      if(apexMode==='easier'){hpMul*=0.78; speedMul*=0.9; fireMul*=1.15; spawnMul*=1.05;}
+      else if(apexMode==='superhard'){hpMul*=1.25; speedMul*=1.12; fireMul*=0.85; spawnMul*=0.95;}
+    }
     LEVEL_CFG[i]=Object.assign({},b);
     LEVEL_CFG[i].bossHP = Math.max(1,Math.round(b.bossHP * hpMul));
     LEVEL_CFG[i].enemySpeedMult = b.enemySpeedMult * speedMul;
-    LEVEL_CFG[i].spawnBase = Math.max(18, Math.round(b.spawnBase * spawnMul));
-    LEVEL_CFG[i].bossFireRate = Math.max(10, Math.round(b.bossFireRate * fireMul));
+    LEVEL_CFG[i].spawnBase = Math.max(14, Math.round(b.spawnBase * spawnMul));
+    LEVEL_CFG[i].bossFireRate = Math.max(8, Math.round(b.bossFireRate * fireMul));
     LEVEL_CFG[i].bossProjSpeed = Math.max(1, Math.round(b.bossProjSpeed * (1 + (speedMul-1)*0.5)));
     LEVEL_CFG[i].killsForBoss = Math.max(3, Math.round(b.killsForBoss * killsMul));
   }
@@ -876,7 +891,18 @@ function updateBoss(){
   if(boss.state==='dying'){
     boss.dyingTimer--;boss.dyingAlpha=clamp(boss.dyingTimer/80,0,1);
     if(boss.dyingTimer%14===0)explode(boss.x+rnd(-50,50),boss.y+rnd(-60,60),true);
-    if(boss.dyingTimer<=0){boss.dead=true;score+=50;if(score>best){best=score;localStorage.setItem('catblaster-best',best);}state='level_clear';SFX.victory();}
+    if(boss.dyingTimer<=0){
+      boss.dead=true;score+=50;if(score>best){best=score;localStorage.setItem('catblaster-best',best);} 
+      state='level_clear';
+      SFX.victory();
+      // special trophy for beating Level 10
+      if(level===MAX_LEVEL){
+        localStorage.setItem('dino-apex-beaten','1');
+        // celebratory particles and tone
+        for(let i=0;i<40;i++)explode(boss.x+rnd(-140,140),boss.y+rnd(-120,120),true);
+        if(!muted){[360,420,480,600,720].forEach((f,i)=>setTimeout(()=>tone(f,'triangle',0.2,0.2),i*140));}
+      }
+    }
     return;
   }
   if(boss.state==='entering'){boss.x-=3.5;if(boss.x<=boss.targetX){boss.x=boss.targetX;boss.state='fighting';}return;}
