@@ -111,13 +111,25 @@
           <button id="gotoLevel" style="margin-left:8px;padding:6px 8px;border-radius:8px;background:#ffd166;color:#0b0a1e;border:none;font-weight:700;">Go</button>
         </label>
         <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
-          Apex mode:
-          <select id="apexMode" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
-            <option value="normal">Normal</option>
-            <option value="easier">Easier</option>
-            <option value="superhard" selected>Super Hard</option>
-          </select>
-        </label>
+            Apex mode:
+            <select id="apexMode" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+              <option value="normal">Normal</option>
+              <option value="easier">Easier</option>
+              <option value="superhard" selected>Super Hard</option>
+            </select>
+          </label>
+          <!-- Level10 tuning sliders -->
+          <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+            L10 HP x
+            <input id="l10hp" type="range" min="50" max="200" value="125" style="width:100px;margin-left:8px;" />
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.03);padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+            L10 Proj x
+            <input id="l10proj" type="range" min="50" max="180" value="100" style="width:100px;margin-left:8px;" />
+          </label>
+          <!-- optional external audio files (place in mathkids/audio/). If missing, tones are used -->
+          <audio id="audioLife" src="audio/life-pickup.mp3" preload="auto"></audio>
+          <audio id="audioApex" src="audio/apex-theme.mp3" preload="auto"></audio>
         <button id="startBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#4cc9f0;color:#04202a;font-weight:700;">▶ Start</button>
         <button id="resetBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:#f3722c;color:#0b0a1e;font-weight:700;">⟲ Reset</button>
         <button id="muteBtn" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:#fff;">🔊</button>
@@ -257,6 +269,9 @@ function applyDifficulty(){
   try{const bv = document.getElementById('breathVol'); if(bv) breathVolume = parseInt(bv.value,10)/100;}catch(e){}
   try{const bs = document.getElementById('breathSpeed'); if(bs) breathSpeed = parseInt(bs.value,10);}catch(e){}
   try{const am = document.getElementById('apexMode'); if(am) apexMode = am.value;}catch(e){}
+  // read level10 tuning
+  try{const l10hp = document.getElementById('l10hp'); if(l10hp) l10HpMul = parseInt(l10hp.value,10)/100;}catch(e){}
+  try{const l10proj = document.getElementById('l10proj'); if(l10proj) l10ProjMul = parseInt(l10proj.value,10)/100;}catch(e){}
   // build LEVEL_CFG from BASE_LEVEL_CFG applying multipliers
   const diff=currentDifficulty;
   LEVEL_CFG=[null];
@@ -273,6 +288,9 @@ function applyDifficulty(){
     if(i===10){
       if(apexMode==='easier'){hpMul*=0.78; speedMul*=0.9; fireMul*=1.15; spawnMul*=1.05;}
       else if(apexMode==='superhard'){hpMul*=1.25; speedMul*=1.12; fireMul*=0.85; spawnMul*=0.95;}
+      // apply user tuning sliders
+      if(typeof l10HpMul!=='undefined') hpMul *= l10HpMul;
+      if(typeof l10ProjMul!=='undefined') b.bossProjSpeed = Math.round(b.bossProjSpeed * l10ProjMul);
     }
     LEVEL_CFG[i]=Object.assign({},b);
     LEVEL_CFG[i].bossHP = Math.max(1,Math.round(b.bossHP * hpMul));

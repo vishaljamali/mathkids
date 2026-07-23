@@ -183,6 +183,20 @@
 
 <p class="footer">Made with ❤️ by a 4th grader from Germany</p>
 
+<!-- Trophy badge for beating Apex -->
+<script></script>
+  try{
+    const stuck = localStorage.getItem('dino-apex-beaten');
+    if(stuck==='1'){
+      const card = document.querySelector('.card');
+      const badge = document.createElement('div');
+      badge.style.cssText = 'position:absolute;right:18px;top:18px;background:linear-gradient(90deg,#ffd166,#f9c74f);color:#0b0a1e;padding:8px 12px;border-radius:8px;font-weight:800;box-shadow:0 6px 18px rgba(0,0,0,0.35);';
+      badge.innerText = '🏆 Apex Conqueror!';
+      card.appendChild(badge);
+    }
+  }catch(e){}
+</script>
+
 <script>
   // stars
   const wrap = document.getElementById('stars');
