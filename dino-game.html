@@ -212,10 +212,11 @@ const _midBg=makeBldgCanvas(MID,MID_W,18,'#06051a','rgba(255,195,90,0.75)','rgba
 // ── GUN CONFIG ─────────────────────────────────────────────────────────────
 const GUN_DURATION=900;
 const GUN_CFG=[null,
-  {offsets:[0],        rate:18,r:4, vx:14,col:'#fff8b0',label:'NORMAL', glowCol:null},
-  {offsets:[-9,9],     rate:13,r:6, vx:15,col:'#ffe040',label:'DOUBLE', glowCol:'#f9c74f'},
-  {offsets:[-16,0,16], rate:9, r:8, vx:17,col:'#ff8820',label:'TRIPLE', glowCol:'#ff6600'},
-  {offsets:[-22,-7,7,22],rate:6,r:10,vx:20,col:'#ff44ff',label:'QUAD',  glowCol:'#cc00ff'},
+  // dmg is used for how much HP a bullet removes on hit
+  {offsets:[0],        rate:16,r:5,  vx:16,col:'#fff8b0',label:'NORMAL', glowCol:null, dmg:1},
+  {offsets:[-9,9],     rate:11,r:8,  vx:18,col:'#ffe040',label:'DOUBLE', glowCol:'#f9c74f', dmg:2},
+  {offsets:[-16,0,16], rate:7, r:10, vx:20,col:'#ff8820',label:'TRIPLE', glowCol:'#ff6600', dmg:3},
+  {offsets:[-22,-7,7,22],rate:5,r:14,vx:24,col:'#ff44ff',label:'QUAD',  glowCol:'#cc00ff', dmg:5},
 ];
 
 // ── LEVEL CONFIG (base + difficulty modifiers) ─────────────────────────────
@@ -972,14 +973,16 @@ function update(){
 
   // bullets vs boss
   if(boss&&!boss.dead&&boss.state!=='entering'){
-    for(let j=bullets.length-1;j>=0;j--){
-      const b=bullets[j],dx=b.x-boss.x,dy=b.y-boss.y;
-      if(Math.sqrt(dx*dx+dy*dy)<boss.hitRadius){
-        const dmg=b.lvl>=3?2:1;bullets.splice(j,1);boss.hp-=dmg;boss.hit=8;shakePow=5;SFX.bossHit();
-        if(boss.hp<=0&&boss.state!=='dying'){boss.state='dying';boss.dyingTimer=120;boss.dyingAlpha=1;explode(boss.x,boss.y,true);explode(boss.x-40,boss.y+30,true);shakePow=28;}
+      for(let j=bullets.length-1;j>=0;j--){
+        const b=bullets[j],dx=b.x-boss.x,dy=b.y-boss.y;
+        if(Math.sqrt(dx*dx+dy*dy)<boss.hitRadius){
+          const cfg = GUN_CFG[b.lvl]||GUN_CFG[1];
+          const dmg = cfg.dmg || (b.lvl>=3?2:1);
+          bullets.splice(j,1);boss.hp-=dmg;boss.hit=8;shakePow=5;SFX.bossHit();
+          if(boss.hp<=0&&boss.state!=='dying'){boss.state='dying';boss.dyingTimer=120;boss.dyingAlpha=1;explode(boss.x,boss.y,true);explode(boss.x-40,boss.y+30,true);shakePow=28;}
+        }
       }
     }
-  }
 
   // enemies
   for(let i=enemies.length-1;i>=0;i--){
@@ -987,17 +990,19 @@ function update(){
     if(e.oscA>0){e.oscPh+=0.06;e.y=e.baseY+Math.sin(e.oscPh)*e.oscA;}
     if(e.x<-65){enemies.splice(i,1);takeDamage();continue;}
     for(let j=bullets.length-1;j>=0;j--){
-      const b=bullets[j],dx=b.x-e.x,dy=b.y-e.y;
-      if(Math.sqrt(dx*dx+dy*dy)<e.size*.54){
-        bullets.splice(j,1);e.hp--;e.hit=8;
-        if(e.hp<=0){explode(e.x,e.y,e.kind==='rat');score+=e.pts;killCount++;enemies.splice(i,1);SFX.hit();
-          if(Math.random()<(e.kind==='rat'?.55:.22))spawnPowerup(e.x,e.y);
-          const bk=LEVEL_CFG[level].killsForBoss;
-          if(killCount>=bk&&!boss&&bossWarningTimer===0){enemies=[];bossWarningTimer=150;warnBossName=LEVEL_CFG[level].bossName;}
+          const b=bullets[j],dx=b.x-e.x,dy=b.y-e.y;
+          if(Math.sqrt(dx*dx+dy*dy)<e.size*.54){
+            const cfg = GUN_CFG[b.lvl]||GUN_CFG[1];
+            const dmg = cfg.dmg || (b.lvl>=3?2:1);
+            bullets.splice(j,1);e.hp-=dmg;e.hit=8;
+            if(e.hp<=0){explode(e.x,e.y,e.kind==='rat');score+=e.pts;killCount++;enemies.splice(i,1);SFX.hit();
+              if(Math.random()<(e.kind==='rat'?.55:.22))spawnPowerup(e.x,e.y);
+              const bk=LEVEL_CFG[level].killsForBoss;
+              if(killCount>=bk&&!boss&&bossWarningTimer===0){enemies=[];bossWarningTimer=150;warnBossName=LEVEL_CFG[level].bossName;}
+            }
+            break;
+          }
         }
-        break;
-      }
-    }
   }
 
   // boss projectiles
