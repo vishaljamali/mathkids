@@ -771,22 +771,34 @@ function spawnEnemy(){
 function spawnBoss(){
   const cfg=LEVEL_CFG[level];
   boss={x:W+180,y:H/2,targetX:560,size:cfg.bossSize,hp:cfg.bossHP,maxHp:cfg.bossHP,
-    speed:cfg.bossSpeed,fireRate:cfg.bossFireRate,projSpeed:cfg.bossProjSpeed,
-    fireTimer:60,chargeTimer:350,state:'entering',hit:0,dead:false,
-    dyingAlpha:1,dyingTimer:0,phase2Triggered:false,hitRadius:cfg.bossSize*1.1};
-  // special burst and FX for Blood King
-  // play the base roar always for feedback, but add extra if user wants roars and chose fierce skin
-  SFX.bossRoar();shakePow=20;
-  if(appearance==='fierce' && roarOnBoss && !muted){
-    // extra low rumble sequence
-    tone(70,'sawtooth',0.6,0.45);setTimeout(()=>tone(110,'sine',0.28,0.32),180);
-  }
-  if(level===4){
-    // bigger entrance explosion and sound
-    for(let i=0;i<6;i++)setTimeout(()=>explode(boss.x-40 + rnd(-40,40), boss.y + rnd(-40,40), true), i*60);
-    // dramatic tones
-    if(!muted){tone(120,'sawtooth',0.5,0.42);setTimeout(()=>tone(240,'triangle',0.28,0.22),140);}  
-  }
+  speed:cfg.bossSpeed,fireRate:cfg.bossFireRate,projSpeed:cfg.bossProjSpeed,
+  fireTimer:60,chargeTimer:350,state:'entering',hit:0,dead:false,
+  dyingAlpha:1,dyingTimer:0,phase2Triggered:false,hitRadius:cfg.bossSize*1.1};
+// decide attack pattern by level (keeps code readable)
+const patterns = {
+  5: 'pierce',     // faster, piercing shots
+  6: 'summon',     // summons small faster enemies (spawnEnemy)
+  7: 'stomp',      // heavy circle stomp blasts
+  8: 'ash',        // ash cloud slow projectiles
+  9: 'void',       // homing shots
+ 10: 'apex'        // mixed / harder
+};
+boss.pattern = patterns[level] || null;
+// special burst and FX for Blood King and other bosses
+SFX.bossRoar();shakePow=20;
+if(appearance==='fierce' && roarOnBoss && !muted){
+  tone(70,'sawtooth',0.6,0.45);setTimeout(()=>tone(110,'sine',0.28,0.32),180);
+}
+// entrance FX per pattern for flair
+if(boss.pattern==='pierce'){ if(!muted) tone(360,'triangle',0.18,0.24);} 
+if(boss.pattern==='summon'){ for(let i=0;i<4;i++)setTimeout(()=>explode(boss.x-60 + rnd(-30,30), boss.y + rnd(-50,50), false), i*90);} 
+if(boss.pattern==='stomp'){ for(let i=0;i<6;i++)setTimeout(()=>explode(boss.x-40 + rnd(-40,40), boss.y + rnd(-40,40), true), i*50);} 
+if(boss.pattern==='ash'){ for(let i=0;i<8;i++)setTimeout(()=>particles.push({x:boss.x+rnd(-40,40),y:boss.y+rnd(-50,50),vx:rnd(-0.6,0.6),vy:rnd(-0.6,0.6),life:1,c:'#d9d0b0',r:rnd(2,6)}), i*60);} 
+if(boss.pattern==='void'){ if(!muted) tone(140,'sine',0.2,0.28);} 
+if(boss.pattern==='apex'){
+  for(let i=0;i<8;i++)setTimeout(()=>explode(boss.x-40 + rnd(-50,50), boss.y + rnd(-60,60), true), i*50);
+  if(!muted){tone(120,'sawtooth',0.5,0.42);setTimeout(()=>tone(240,'triangle',0.28,0.22),140);}  
+}
 }
 
 function explode(x,y,big){
@@ -843,18 +855,55 @@ function updateBoss(){
     }
     // Level 3+ : circle blast (stronger on level 4)
     if(level>=3){
-      if(!boss.circleTimer)boss.circleTimer = (level===4?200:260);
+      if(!boss.circleTimer) boss.circleTimer = (level===4?200:260);
       boss.circleTimer--;
       if(boss.circleTimer<=0){
         boss.circleTimer = boss.phase2Triggered ? (level===4?120:180) : (level===4?200:260);
         const px=boss.x-boss.size*1.2,py=boss.y;
-        const blastShots = boss.phase2Triggered ? (level===4?18:12) : (level===4?12:8);
-        const speedMul = level===4?1.1:0.75;
-        for(let i=0;i<blastShots;i++){
-          const ang=(i/blastShots)*Math.PI*2;
-          bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed*speedMul,vy:Math.sin(ang)*boss.projSpeed*speedMul,r:(level===4?12:10)});
+        // choose pattern-specific blasts
+        if(boss.pattern==='pierce'){
+          // many narrow fast shots
+          const blastShots = boss.phase2Triggered?20:12;
+          for(let i=0;i<blastShots;i++){
+            const ang=(i/blastShots)*Math.PI*2 + (boss.phase2Triggered?Math.random()*0.4:0);
+            bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed*1.4,vy:Math.sin(ang)*boss.projSpeed*1.4,r:8});
+          }
+          shakePow=18; screenFlash=0.45;
+        } else if(boss.pattern==='summon'){
+          // spawn extra enemies near boss (lightweight) for a short time
+          for(let s=0;s<3;s++)spawnEnemy();
+          // small radial shots
+          for(let i=0;i<10;i++){const ang=(i/10)*Math.PI*2;bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed*0.9,vy:Math.sin(ang)*boss.projSpeed*0.9,r:8});}
+          shakePow=16; screenFlash=0.35;
+        } else if(boss.pattern==='stomp'){
+          // heavy slow ring
+          const blastShots = boss.phase2Triggered?18:12;
+          for(let i=0;i<blastShots;i++){const ang=(i/blastShots)*Math.PI*2;bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed*0.6,vy:Math.sin(ang)*boss.projSpeed*0.6,r:14});}
+          shakePow=36; screenFlash=0.95;
+        } else if(boss.pattern==='ash'){
+          // create many slow ash particles (using bossProjectiles as harmless clouds)
+          for(let i=0;i<12;i++){const ang=Math.random()*Math.PI*2;bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed*0.35,vy:Math.sin(ang)*boss.projSpeed*0.35,r:18,ash:true});}
+          shakePow=12; screenFlash=0.25;
+        } else if(boss.pattern==='void'){
+          // fire homing projectiles
+          const shots = boss.phase2Triggered?8:5;
+          for(let i=0;i<shots;i++){const ang=(i/shots)*Math.PI*2;bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed*0.9,vy:Math.sin(ang)*boss.projSpeed*0.9,r:12,homing:true});}
+          shakePow=20; screenFlash=0.6;
+        } else if(boss.pattern==='apex'){
+          // big mixed blast: homing + ring
+          for(let i=0;i<10;i++){const ang=(i/10)*Math.PI*2;bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed,vy:Math.sin(ang)*boss.projSpeed,r:12});}
+          for(let i=0;i<6;i++){bossProjectiles.push({x:px,y:py,vx:rnd(-2,2),vy:rnd(-2,2),r:10,homing:true});}
+          shakePow=40; screenFlash=1.0;
+        } else {
+          // default (existing behavior)
+          const blastShots = boss.phase2Triggered ? (level===4?18:12) : (level===4?12:8);
+          const speedMul = level===4?1.1:0.75;
+          for(let i=0;i<blastShots;i++){
+            const ang=(i/blastShots)*Math.PI*2;
+            bossProjectiles.push({x:px,y:py,vx:Math.cos(ang)*boss.projSpeed*speedMul,vy:Math.sin(ang)*boss.projSpeed*speedMul,r:(level===4?12:10)});
+          }
+          shakePow = level===4?30:18; screenFlash = level===4?0.9:0.5;
         }
-        shakePow = level===4?30:18; screenFlash = level===4?0.9:0.5;
       }
     }
     boss.chargeTimer--;
@@ -937,10 +986,25 @@ function update(){
 
   // boss projectiles
   for(let i=bossProjectiles.length-1;i>=0;i--){
-    const p=bossProjectiles[i];p.x+=p.vx;p.y+=p.vy;
-    if(p.x<-30||p.y<-30||p.y>H+30){bossProjectiles.splice(i,1);continue;}
-    if(Math.sqrt((p.x-cat.x)**2+(p.y-cat.y)**2)<38){bossProjectiles.splice(i,1);takeDamage();}
-  }
+      const p=bossProjectiles[i];
+      // homing behavior
+      if(p.homing){
+        const dx = cat.x - p.x, dy = cat.y - p.y; const d = Math.sqrt(dx*dx+dy*dy)||1;
+        // steer slightly towards player
+        p.vx += (dx/d) * 0.22; p.vy += (dy/d) * 0.22;
+        // clamp speed
+        const sp = Math.sqrt(p.vx*p.vx + p.vy*p.vy);
+        const maxsp = 14; if(sp>maxsp){p.vx = p.vx/sp*maxsp; p.vy = p.vy/sp*maxsp;}
+      }
+      p.x+=p.vx;p.y+=p.vy;
+      if(p.x<-40||p.y<-40||p.y>H+40){bossProjectiles.splice(i,1);continue;}
+      if(Math.sqrt((p.x-cat.x)**2+(p.y-cat.y)**2)<(p.r||12)+18){
+        // ash clouds are less damaging; homing/projectile do damage
+        if(!p.ash) takeDamage();
+        bossProjectiles.splice(i,1);
+        continue;
+      }
+    }
 
   // gun timer
   if(gunTimer>0){gunTimer--;if(gunTimer===0){gunLevel=Math.max(1,gunLevel-1);if(gunLevel>1)gunTimer=GUN_DURATION;SFX.gunDown();}}
