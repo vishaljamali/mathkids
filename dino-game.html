@@ -775,14 +775,37 @@ function shoot(){
 function spawnPowerup(x,y){powerups.push({x,y:clamp(y,80,GROUND_Y-40),vx:-1.8,bobPhase:Math.random()*Math.PI*2,life:1,collected:false,collectAnim:0});}
 
 function spawnEnemy(){
-  if(boss||bossWarningTimer>0||enemies.length>=16)return;
+  if(boss||bossWarningTimer>0||enemies.length>=22)return; // allow more on higher levels
   const cfg=LEVEL_CFG[level],r=Math.random();
-  const kind=(score>10&&r<0.2)?'bat':(score>15&&r<0.42)?'rat':'mouse';
-  const size=kind==='rat'?60:kind==='bat'?38:46;
-  const spd=(kind==='bat'?rnd(3.5,6):kind==='rat'?rnd(1,2.2):rnd(1.5,3.2))*cfg.enemySpeedMult;
-  const maxHp=kind==='rat'?3:1;
-  const y=rnd(60,GROUND_Y-40);
-  enemies.push({x:W+60,y,kind,size,spd,hp:maxHp,maxHp,pts:kind==='rat'?3:kind==='bat'?2:1,hit:0,baseY:y,oscPh:Math.random()*Math.PI*2,oscA:kind==='bat'?rnd(22,48):0});
+  // Introduce elite enemies on higher levels and especially level 10
+  let kind;
+  if(level>=10){
+    if(r<0.18) kind='fastBat';
+    else if(r<0.36) kind='armoredRat';
+    else if(r<0.58) kind='rat';
+    else kind='mouse';
+  } else if(level>=7){
+    if(r<0.12) kind='fastBat';
+    else if(r<0.3) kind='rat';
+    else if(r<0.5) kind='bat';
+    else kind='mouse';
+  } else {
+    kind=(score>10&&r<0.2)?'bat':(score>15&&r<0.42)?'rat':'mouse';
+  }
+  const size = kind==='rat'?60:kind==='bat'?38:kind==='fastBat'?34:kind==='armoredRat'?72:46;
+  let baseSpd;
+  if(kind==='bat') baseSpd = rnd(3.5,6);
+  else if(kind==='fastBat') baseSpd = rnd(5.5,8.5);
+  else if(kind==='rat') baseSpd = rnd(1,2.2);
+  else if(kind==='armoredRat') baseSpd = rnd(1,1.6);
+  else baseSpd = rnd(1.5,3.2);
+  const spd = baseSpd * cfg.enemySpeedMult;
+  let maxHp = (kind==='rat'?3:1);
+  if(kind==='armoredRat') maxHp = 6;
+  if(kind==='fastBat') maxHp = 2;
+  const pts = kind==='armoredRat'?6:(kind==='rat'?3:kind==='fastBat'?2:(kind==='bat'?2:1));
+  const y = rnd(60,GROUND_Y-40);
+  enemies.push({x:W+60,y,kind,size,spd,hp:maxHp,maxHp,pts,hit:0,baseY:y,oscPh:Math.random()*Math.PI*2,oscA:(kind==='bat'||kind==='fastBat')?rnd(22,48):0});
 }
 
 function spawnBoss(){
@@ -1069,7 +1092,10 @@ function draw(){
   if(screenFlash>0){ctx.fillStyle=`rgba(190,18,18,${screenFlash*.2})`;ctx.fillRect(0,0,W,H);}
   drawCasings();drawBullets();
   bossProjectiles.forEach(drawBossProj);
-  enemies.forEach(e=>{if(e.kind==='bat')drawBat(e.x,e.y,e.size,e.hit);else drawMouse(e.x,e.y,e.size,e.hp,e.maxHp,e.kind==='rat',e.hit);});
+  enemies.forEach(e=>{
+      if(e.kind==='bat' || e.kind==='fastBat') drawBat(e.x,e.y,e.size,e.hit);
+      else drawMouse(e.x,e.y,e.size,e.hp,e.maxHp,(e.kind==='rat'||e.kind==='armoredRat'),e.hit);
+    });
   if(boss&&!boss.dead)drawBoss(boss);
   powerups.forEach(drawPowerup);
   drawGun(cat.x,cat.y);drawCat(cat.x,cat.y);
