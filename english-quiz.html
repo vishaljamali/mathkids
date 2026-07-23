@@ -34,7 +34,7 @@
   <div class="card">
     <div class="top">
       <div>
-</div>        <h1></h1>English Quiz 📚</h1>
+        <h1>English Quiz 📚</h1>
         <p class="lead">Short questions for school: vocabulary, grammar, and spelling. 20 seconds per question.</p>
       </div>
       <div style="text-align:right">
@@ -46,6 +46,7 @@
     <div class="qwrap">
       <div class="question" id="question">Ready?</div>
       <div class="choices" id="choices"></div>
+      <div id="explain" style="margin-top:10px;opacity:0.9;font-size:0.95rem;min-height:28px"></div>
     </div>
 
     <div class="controls">
@@ -55,31 +56,33 @@
     </div>
 
     <div class="meta">
-      <div></div>Streak: <span id="streak">0</span></div>
-      <div></div>Best: <span id="best">0</span></div>
+      <div>Streak: <span id="streak">0</span></div>
+      <div>Best: <span id="best">0</span></div>
       <div><a class="link" href="index.html">🏠 Home</a></div>
     </div>
-    <footer></footer>Made for kids — be kind and have fun! 😊</footer>
+    <footer>Made for kids — be kind and have fun! 😊</footer>
   </div>
+
+  <canvas id="confetti" style="position:fixed;left:0;top:0;pointer-events:none;z-index:9999"></canvas>
 
 <script>
 </script>// English quiz — simple single-choice, 20s timer
 const QUIZ=[
-  {q:'Which word is a noun?', c:['Run','Happy','Dog','Quick'], a:2},
-  {q:'Choose the correct past form of "go".', c:['goed','went','gone','goes'], a:1},
-  {q:'Which is a synonym of "big"?', c:['tiny','large','small','slim'], a:1},
-  {q:'Pick the correct spelling.', c:['recieve','receive','recive','receeve'], a:1},
-  {q:'Which word is an adjective?', c:['cat','blue','swim','school'], a:1},
-  {q:'Choose the right article: ___ apple', c:['a','an','the','no article'], a:1},
-  {q:'Which sentence is correct?', c:['He dont like it.','He doesn\'t like it.','He no like it.','He aren\'t like it.'], a:1},
-  {q:'Which is a question word?', c:['When','Because','And','But'], a:0},
-  {q:'Choose opposite of "hot".', c:['cold','warm','boil','heat'], a:0},
-  {q:'Which is a verb?', c:['apple','run','green','three'], a:1},
-  {q:'Which is correct plural?', c:['childs','children','childes','child'], a:1},
-  {q:'Choose the correct form: She ___ to school.', c:['go','goes','gone','going'], a:1},
-  {q:'Which word rhymes with "cat"?', c:['dog','bat','book','pen'], a:1},
-  {q:'Pick the correct preposition: He is ___ the box.', c:['in','on','at','underneathss'], a:0},
-  {q:'Which is a pronoun?', c:['he','table','apple','run'], a:0}
+  {q:'Which word is a noun?', c:['Run','Happy','Dog','Quick'], a:2, explain:'A noun is a person, place or thing. "Dog" is a thing.'},
+  {q:'Choose the correct past form of "go".', c:['goed','went','gone','goes'], a:1, explain:'The past of "go" is "went".'},
+  {q:'Which is a synonym of "big"?', c:['tiny','large','small','slim'], a:1, explain:'"Large" means the same as "big".'},
+  {q:'Pick the correct spelling.', c:['recieve','receive','recive','receeve'], a:1, explain:'"Receive" is spelled r-e-c-e-i-v-e.'},
+  {q:'Which word is an adjective?', c:['cat','blue','swim','school'], a:1, explain:'Adjectives describe nouns. "Blue" describes color.'},
+  {q:'Choose the right article: ___ apple', c:['a','an','the','no article'], a:1, explain:'We say "an apple" because apple starts with a vowel sound.'},
+  {q:'Which sentence is correct?', c:['He dont like it.','He doesn\'t like it.','He no like it.','He aren\'t like it.'], a:1, explain:'The correct contraction is "doesn\'t".'},
+  {q:'Which is a question word?', c:['When','Because','And','But'], a:0, explain:'"When" asks a question about time.'},
+  {q:'Choose opposite of "hot".', c:['cold','warm','boil','heat'], a:0, explain:'The opposite of hot is cold.'},
+  {q:'Which is a verb?', c:['apple','run','green','three'], a:1, explain:'A verb is an action word. "Run" is an action.'},
+  {q:'Which is correct plural?', c:['childs','children','childes','child'], a:1, explain:'Irregular plural of child is children.'},
+  {q:'Choose the correct form: She ___ to school.', c:['go','goes','gone','going'], a:1, explain:'For he/she/it we add -s: "she goes".'},
+  {q:'Which word rhymes with "cat"?', c:['dog','bat','book','pen'], a:1, explain:'"Bat" rhymes with "cat".'},
+  {q:'Pick the correct preposition: He is ___ the box.', c:['in','on','at','underneathss'], a:0, explain:'If he is inside the box we say "in".'},
+  {q:'Which is a pronoun?', c:['he','table','apple','run'], a:0, explain:'"He" is a pronoun used for a person.'}
 ];
 
 let idx=0,score=0,streak=0,best=0,timer=20,tid=null,locked=false;
@@ -103,9 +106,12 @@ function startTimer(){timer=20; timerEl.textContent=timer; if(tid)clearInterval(
 
 function onTimeUp(){ if(locked) return; locked=true; feedback('Time!','wrong'); revealAnswer(null); setTimeout(nextQuestion,900);} 
 
-function showQuestion(){locked=false; feedbackEl.textContent=''; const q=questions[idx]; qEl.textContent=(idx+1)+'. '+q.q; choicesEl.innerHTML=''; q.c.forEach((txt,i)=>{const b=document.createElement('button'); b.className='choice'; b.textContent=txt; b.onclick=()=>choose(i,b); choicesEl.appendChild(b);}); startTimer();}
+function showQuestion(){locked=false; feedbackEl.textContent=''; document.getElementById('explain').textContent=''; const q=questions[idx]; qEl.textContent=(idx+1)+'. '+q.q; choicesEl.innerHTML=''; q.c.forEach((txt,i)=>{const b=document.createElement('button'); b.className='choice'; b.textContent=txt; b.onclick=()=>choose(i,b); choicesEl.appendChild(b);}); startTimer();}
 
-function choose(i,but){ if(locked) return; locked=true; clearInterval(tid); const q=questions[idx]; if(i===q.a){ but.classList.add('correct'); score+=10; streak++; feedback('Good! +10','ok'); SFX.pickup(); } else { but.classList.add('wrong'); feedback('Nope','wrong'); revealAnswer(i);} scoreEl.textContent=score; streakEl.textContent=streak; if(score>best){best=score; localStorage.setItem('english-best',best); bestEl.textContent=best;} setTimeout(nextQuestion,900); }
+// simple confetti
+const confettiCanvas = document.getElementById('confetti'); const cc = confettiCanvas.getContext?confettiCanvas.getContext('2d'):null; function resizeConf(){confettiCanvas.width=window.innerWidth; confettiCanvas.height=window.innerHeight;} window.addEventListener('resize', resizeConf); resizeConf(); let confetti=[]; function spawnConfetti(){ for(let i=0;i<40;i++){confetti.push({x:W/2 + rnd(-60,60), y: H/2 + rnd(-40,40), vx:rnd(-3,3), vy:rnd(-6,-2), r:rnd(2,6), c:['#ffd166','#4cc9f0','#ff6b6b','#90be6d'][rint(0,3)], life:1});} if(!confettiLoop) confettiLoop = setInterval(drawConfetti,40);} var confettiLoop=null; function drawConfetti(){ if(!cc) return; cc.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); for(let i=confetti.length-1;i>=0;i--){const p=confetti[i]; p.x+=p.vx; p.y+=p.vy; p.vy+=0.22; p.life-=0.02; cc.globalAlpha = Math.max(0,p.life); cc.fillStyle=p.c; cc.beginPath(); cc.arc(p.x,p.y,p.r,0,Math.PI*2); cc.fill(); if(p.life<=0) confetti.splice(i,1);} if(confetti.length===0 && confettiLoop){clearInterval(confettiLoop); confettiLoop=null;} }
+
+function choose(i,but){ if(locked) return; locked=true; clearInterval(tid); const q=questions[idx]; if(i===q.a){ but.classList.add('correct'); score+=10; streak++; feedback('Good! +10','ok'); SFX.pickup(); document.getElementById('explain').textContent = q.explain || ''; spawnConfetti(); } else { but.classList.add('wrong'); feedback('Nope','wrong'); revealAnswer(i);} scoreEl.textContent=score; streakEl.textContent=streak; if(score>best){best=score; localStorage.setItem('english-best',best); bestEl.textContent=best;} setTimeout(nextQuestion,900); }
 
 function revealAnswer(userIdx){ const q=questions[idx]; const buttons = choicesEl.querySelectorAll('.choice'); buttons.forEach((b,i)=>{ if(i===q.a) b.classList.add('correct'); }); streak = userIdx===q.a?streak:0; streakEl.textContent=streak; }
 
