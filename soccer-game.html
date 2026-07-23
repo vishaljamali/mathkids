@@ -59,10 +59,22 @@
           <option value="9">João Cancelo</option>
           <option value="10">Rúben Neves</option>
         </select>
+        <div id="playerCounts" style="margin-top:6px;font-size:12px;opacity:0.9">loading counts...</div>
       </label>
 
-      <img id="playerPhoto" src="images/portugal1.svg" alt="player photo" style="width:56px;height:56px;border-radius:8px;margin-left:10px;border:2px solid rgba(255,255,255,0.06)" />
+      <img id="playerPhoto" src="images/portugal1.jpg" alt="player photo" style="width:56px;height:56px;border-radius:8px;margin-left:10px;border:2px solid rgba(255,255,255,0.06)" />
 
+      <div style="margin-left:auto;display:flex;gap:10px;align-items:center" class="hud">
+        <button id="showAchievements" class="btn" style="background:#4cc9f0;color:#062;padding:8px 10px;border-radius:8px">Achievements</button>
+        <div></div>Portugal National Team 🇵🇹 &nbsp; Score: <span id="score">0</span> &nbsp;|&nbsp; Shots: <span id="shots">0</span></div>
+      </div>
+
+      <!-- tuning sliders -->
+      <div style="width:100%;margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <label style="font-weight:700">Keeper speed: <input id="keeperSpeed" type="range" min="0.5" max="3" step="0.05" value="1" style="margin-left:8px"></label>
+        <label style="font-weight:700">Keeper reach: <input id="keeperReach" type="range" min="0.6" max="2.0" step="0.05" value="1" style="margin-left:8px"></label>
+        <label style="font-weight:700">Teleport chance: <input id="teleportChance" type="range" min="0" max="0.5" step="0.01" value="0.12" style="margin-left:8px"></label>
+      </div>
       <div style="margin-left:auto;display:flex;gap:10px;align-items:center" class="hud"> 
         <button id="showAchievements" class="btn" style="background:#4cc9f0;color:#062;padding:8px 10px;border-radius:8px">Achievements</button>
         <div>Portugal National Team 🇵🇹 &nbsp; Score: <span id="score">0</span> &nbsp;|&nbsp; Shots: <span id="shots">0</span></div>
@@ -133,11 +145,36 @@
     const playerPhoto = document.getElementById('playerPhoto');
     function setPlayerPhoto(id){ try{ const jpg = 'images/portugal' + id + '.jpg'; const svg = 'images/portugal' + id + '.svg'; // prefer jpg if present
           fetch(jpg, { method: 'HEAD' }).then(res => { if(res.ok) playerPhoto.src = jpg; else playerPhoto.src = svg; }).catch(()=>{ playerPhoto.src = svg; }); }catch(e){} }
+
+    // achievements / counts helpers
+    function loadCounts(){ try{ const counts = JSON.parse(localStorage.getItem('soccer-goals')||'{}'); return counts; }catch(e){return {};}};
+    function saveCounts(c){ try{ localStorage.setItem('soccer-goals', JSON.stringify(c)); }catch(e){}
+    }
+    function updateCountsDisplay(){ try{ const counts = loadCounts(); const mapNames = {1:'Rui',2:'Ronaldo',3:'Bruno',4:'Bernardo',5:'João F',6:'Rúben D',7:'Pepe',8:'Jota',9:'Cancelo',10:'Rúben N'}; const el = document.getElementById('playerCounts'); el.innerHTML = ''; for(let i=1;i<=10;i++){ const c = counts[i]||0; const span = document.createElement('span'); span.style.cssText='display:inline-block;background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:8px;margin-right:6px;font-weight:700'; span.textContent = mapNames[i]+': '+c; el.appendChild(span);} }catch(e){}
+    }
+
+    // settings sliders
+    const keeperSpeedInput = document.getElementById('keeperSpeed');
+    const keeperReachInput = document.getElementById('keeperReach');
+    const teleportChanceInput = document.getElementById('teleportChance');
+    function loadSettings(){ try{ const s = JSON.parse(localStorage.getItem('soccer-settings')||'{}'); keeperSpeedInput.value = s.speed||1; keeperReachInput.value = s.reach||1; teleportChanceInput.value = s.teleport||0.12; }catch(e){}
+    }
+    function saveSettings(){ try{ const s = { speed: parseFloat(keeperSpeedInput.value), reach: parseFloat(keeperReachInput.value), teleport: parseFloat(teleportChanceInput.value)}; localStorage.setItem('soccer-settings', JSON.stringify(s)); }catch(e){}
+    }
+    function applySettings(){ try{ const s = JSON.parse(localStorage.getItem('soccer-settings')||'{}'); keeper.baseSpeed = 1.6 * (s.speed||1); keeper.reach = 52 * (s.reach||1); window._soccerTeleportChance = (s.teleport||0.12); }catch(e){ window._soccerTeleportChance = 0.12; }}
+    keeper.baseSpeed = 1.6; // default
+    window._soccerTeleportChance = 0.12;
+
+    keeperSpeedInput.addEventListener('input', ()=>{ saveSettings(); applySettings(); });
+    keeperReachInput.addEventListener('input', ()=>{ saveSettings(); applySettings(); });
+    teleportChanceInput.addEventListener('input', ()=>{ saveSettings(); applySettings(); });
+
     // listen for roster changes
-    document.getElementById('playerSelect').addEventListener('change', (e)=>{ setPlayerPhoto(e.target.value); const val = parseInt(e.target.value||'1',10); // if first is GK, set keeper name
-      keeper.name = (val===1 ? 'Rui Patrício' : 'Rui Patrício'); });
+    document.getElementById('playerSelect').addEventListener('change', (e)=>{ setPlayerPhoto(e.target.value); updateCountsDisplay(); const val = parseInt(e.target.value||'1',10); keeper.name = (val===1 ? 'Rui Patrício' : 'Rui Patrício'); });
     // set initial photo
     setPlayerPhoto(document.getElementById('playerSelect').value);
+    updateCountsDisplay();
+    loadSettings(); applySettings();
 
     // confetti particles for celebration
     let confetti = [];
@@ -211,7 +248,8 @@
 
     // Keeper AI: follows ball y with speed scaled by level
     function updateKeeper(dt){ const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10))); const nightmare = !!document.getElementById('nightmareToggle').checked; const speedBase = keeper.baseSpeed + (level-1)*0.28; const speed = (level===10 || nightmare) ? speedBase * 1.6 : speedBase; const dir = Math.sign(ball.y - keeper.y); keeper.vy = dir * speed; keeper.y += keeper.vy * dt; // small teleport chance at L10 or nightmare when ball is close to goal
-      if((level===10 || nightmare) && ball.x > W-260 && Math.random() < 0.12){ keeper.y = ball.y; }
+      const teleChance = (nightmare ? Math.max(0.12, window._soccerTeleportChance) : (level===10 ? window._soccerTeleportChance : 0));
+      if((level===10 || nightmare) && ball.x > W-260 && Math.random() < teleChance){ keeper.y = ball.y; }
       keeper.y = Math.max(goal.y + 20, Math.min(goal.y + goal.h - 20, keeper.y)); }
 
     // Confetti helper (spawn on goal)
