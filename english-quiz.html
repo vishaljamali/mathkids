@@ -33,15 +33,33 @@
 <body></body>
   <div class="card">
     <div class="top">
-      <div>
-        <h1>English Quiz 📚</h1>
-        <p class="lead">Short questions for school: vocabulary, grammar, and spelling. 20 seconds per question.</p>
+        <div>
+          <h1>English Quiz 📚</h1>
+          <p class="lead">Short questions for school: vocabulary, grammar, and spelling. 20 seconds per question.</p>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <label style="font-weight:700">Category:
+              <select id="category" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+                <option value="all">All</option>
+                <option value="vocab">Vocabulary</option>
+                <option value="grammar">Grammar</option>
+                <option value="spelling">Spelling</option>
+              </select>
+            </label>
+            <label style="font-weight:700">Difficulty:
+              <select id="difficulty" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
+                <option value="easy">Easy</option>
+                <option value="normal" selected>Normal</option>
+                <option value="hard">Hard</option>
+              </select>
+            </label>
+            <button id="readBtn" class="btn" style="background:#ffd166;color:#062;">🔊 Read Aloud</button>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="timer">Time: <span id="timer">20</span>s</div>
+          <div class="score">Score: <span id="score">0</span></div>
+        </div>
       </div>
-      <div style="text-align:right">
-        <div class="timer">Time: <span id="timer">20</span>s</div>
-        <div class="score">Score: <span id="score">0</span></div>
-      </div>
-    </div>
 
     <div class="qwrap">
       <div class="question" id="question">Ready?</div>
@@ -68,21 +86,30 @@
 <script>
 </script>// English quiz — simple single-choice, 20s timer
 const QUIZ=[
-  {q:'Which word is a noun?', c:['Run','Happy','Dog','Quick'], a:2, explain:'A noun is a person, place or thing. "Dog" is a thing.'},
-  {q:'Choose the correct past form of "go".', c:['goed','went','gone','goes'], a:1, explain:'The past of "go" is "went".'},
-  {q:'Which is a synonym of "big"?', c:['tiny','large','small','slim'], a:1, explain:'"Large" means the same as "big".'},
-  {q:'Pick the correct spelling.', c:['recieve','receive','recive','receeve'], a:1, explain:'"Receive" is spelled r-e-c-e-i-v-e.'},
-  {q:'Which word is an adjective?', c:['cat','blue','swim','school'], a:1, explain:'Adjectives describe nouns. "Blue" describes color.'},
-  {q:'Choose the right article: ___ apple', c:['a','an','the','no article'], a:1, explain:'We say "an apple" because apple starts with a vowel sound.'},
-  {q:'Which sentence is correct?', c:['He dont like it.','He doesn\'t like it.','He no like it.','He aren\'t like it.'], a:1, explain:'The correct contraction is "doesn\'t".'},
-  {q:'Which is a question word?', c:['When','Because','And','But'], a:0, explain:'"When" asks a question about time.'},
-  {q:'Choose opposite of "hot".', c:['cold','warm','boil','heat'], a:0, explain:'The opposite of hot is cold.'},
-  {q:'Which is a verb?', c:['apple','run','green','three'], a:1, explain:'A verb is an action word. "Run" is an action.'},
-  {q:'Which is correct plural?', c:['childs','children','childes','child'], a:1, explain:'Irregular plural of child is children.'},
-  {q:'Choose the correct form: She ___ to school.', c:['go','goes','gone','going'], a:1, explain:'For he/she/it we add -s: "she goes".'},
-  {q:'Which word rhymes with "cat"?', c:['dog','bat','book','pen'], a:1, explain:'"Bat" rhymes with "cat".'},
-  {q:'Pick the correct preposition: He is ___ the box.', c:['in','on','at','underneathss'], a:0, explain:'If he is inside the box we say "in".'},
-  {q:'Which is a pronoun?', c:['he','table','apple','run'], a:0, explain:'"He" is a pronoun used for a person.'}
+  {q:'Which word is a noun?', c:['Run','Happy','Dog','Quick'], a:2, explain:'A noun is a person, place or thing. "Dog" is a thing.', cat:'vocab', diff:'easy'},
+  {q:'Which is a verb?', c:['apple','run','green','three'], a:1, explain:'A verb is an action word. "Run" is an action.', cat:'vocab', diff:'easy'},
+  {q:'Choose opposite of "hot".', c:['cold','warm','boil','heat'], a:0, explain:'The opposite of hot is cold.', cat:'vocab', diff:'easy'},
+  {q:'Which word rhymes with "cat"?', c:['dog','bat','book','pen'], a:1, explain:'"Bat" rhymes with "cat".', cat:'vocab', diff:'easy'},
+  {q:'Pick the correct preposition: He is ___ the box.', c:['in','on','at','underneathss'], a:0, explain:'If he is inside the box we say "in".', cat:'grammar', diff:'easy'},
+  {q:'Choose the right article: ___ apple', c:['a','an','the','no article'], a:1, explain:'We say "an apple" because apple starts with a vowel sound.', cat:'grammar', diff:'easy'},
+  {q:'Pick the correct spelling.', c:['recieve','receive','recive','receeve'], a:1, explain:'"Receive" is spelled r-e-c-e-i-v-e.', cat:'spelling', diff:'easy'},
+
+  // medium
+  {q:'Choose the correct past form of "go".', c:['goed','went','gone','goes'], a:1, explain:'The past of "go" is "went".', cat:'grammar', diff:'normal'},
+  {q:'Which is correct plural?', c:['childs','children','childes','child'], a:1, explain:'Irregular plural of child is children.', cat:'grammar', diff:'normal'},
+  {q:'Which is a pronoun?', c:['he','table','apple','run'], a:0, explain:'"He" is a pronoun used for a person.', cat:'grammar', diff:'normal'},
+  {q:'Which is a synonym of "big"?', c:['tiny','large','small','slim'], a:1, explain:'"Large" means the same as "big".', cat:'vocab', diff:'normal'},
+  {q:'Which sentence is correct?', c:['He dont like it.','He doesn\'t like it.','He no like it.','He aren\'t like it.'], a:1, explain:'The correct contraction is "doesn\'t".', cat:'grammar', diff:'normal'},
+  {q:'Choose the correct form: She ___ to school.', c:['go','goes','gone','going'], a:1, explain:'For he/she/it we add -s: "she goes".', cat:'grammar', diff:'normal'},
+  {q:'Pick the correct spelling: "separate" is spelled?', c:['seperate','separate','separrate','seper8'], a:1, explain:'Separate is spelled s-e-p-a-r-a-t-e.', cat:'spelling', diff:'normal'},
+
+  // harder
+  {q:'Which sentence uses the correct tense?', c:['I have eat','I had eaten','I has ate','I have ate'], a:1, explain:'"I had eaten" is past perfect and correct here.', cat:'grammar', diff:'hard'},
+  {q:'Choose the synonym of "quickly".', c:['swift','slowly','quiet','soft'], a:0, explain:'"Swift" can mean quickly.', cat:'vocab', diff:'hard'},
+  {q:'Pick the correct punctuation: He said "Hello" ___', c:['.','!','?',';'], a:1, explain:'Using ! matches an excited quote like "Hello!"', cat:'grammar', diff:'hard'},
+  {q:'Which is an adverb?', c:['quick','quickly','quickness','quicker'], a:1, explain:'Adverbs often end in -ly and describe verbs.', cat:'grammar', diff:'hard'},
+  {q:'Which spelling is correct?', c:['accommodation','acommodation','accomodation','acommodation'], a:0, explain:'Accommodation has two c and two m.', cat:'spelling', diff:'hard'},
+  {q:'Choose the correct sentence using relative clause.', c:['The boy who plays piano is mine.','The boy plays piano who is mine.','The who boy plays is mine.','Boy who plays piano is mine.'], a:0, explain:'Relative clause "who plays piano" describes the boy.', cat:'grammar', diff:'hard'}
 ];
 
 let idx=0,score=0,streak=0,best=0,timer=20,tid=null,locked=false;
@@ -93,14 +120,16 @@ const scoreEl=document.getElementById('score');
 const streakEl=document.getElementById('streak');
 const bestEl=document.getElementById('best');
 const feedbackEl=document.getElementById('feedback');
+const explainEl=document.getElementById('explain');
 
-// shuffle copy for session
-let questions = shuffle(QUIZ.slice());
+// session questions
+let questions = [];
 
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a}
 
-function loadBest(){best = parseInt(localStorage.getItem('english-best')||'0',10); bestEl.textContent=best}
-loadBest();
+function loadBestFor(diff){best = parseInt(localStorage.getItem('english-best-'+diff)||'0',10); bestEl.textContent=best}
+
+function buildQuestions(){ const cat = document.getElementById('category').value; const diff = document.getElementById('difficulty').value; const pool = QUIZ.filter(q=> (cat==='all'||q.cat===cat) && (diff==='all' || q.diff===diff)); questions = shuffle(pool.slice()); if(questions.length===0) questions = shuffle(QUIZ.slice()); loadBestFor(diff);}
 
 function startTimer(){timer=20; timerEl.textContent=timer; if(tid)clearInterval(tid); tid=setInterval(()=>{timer--; timerEl.textContent=timer; if(timer<=0){clearInterval(tid); onTimeUp();}},1000);} 
 
@@ -119,7 +148,16 @@ function nextQuestion(){ idx++; if(idx>=questions.length){ finish(); return; } s
 
 function finish(){ qEl.textContent='Quiz finished!'; choicesEl.innerHTML=''; feedback('You scored '+score,''); clearInterval(tid); locked=true; }
 
-function restart(){ questions = shuffle(QUIZ.slice()); idx=0; score=0; streak=0; scoreEl.textContent=score; streakEl.textContent=streak; loadBest(); showQuestion(); }
+function speakText(text){ try{ if('speechSynthesis' in window){ const u = new SpeechSynthesisUtterance(text); u.rate = 0.95; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } }catch(e){} }
+
+function restart(){ buildQuestions(); idx=0; score=0; streak=0; scoreEl.textContent=score; streakEl.textContent=streak; showQuestion(); }
+
+// Read button
+const readBtn = document.getElementById('readBtn'); if(readBtn){ readBtn.addEventListener('click', ()=>{ const q = questions[idx]; if(q){ let text = q.q + '. Choices: ' + q.c.join(', '); speakText(text); } }); }
+
+// load category/difficulty defaults
+try{ document.getElementById('category').value='all'; document.getElementById('difficulty').value='normal'; }catch(e){}
+
 
 function feedback(msg,cls){ feedbackEl.textContent=msg; }
 
