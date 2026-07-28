@@ -18,7 +18,7 @@
     .meta{display:flex;gap:12px;align-items:center;margin-top:10px}
     .hud{font-weight:800}
     .mobile-controls{display:flex;gap:8px;margin-top:10px;align-items:center;justify-content:center}
-    .touch-btn{padding:14px;border-radius:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.06);font-weight:800}
+    .touch-btn{padding:18px 20px;border-radius:12px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);font-weight:900;font-size:18px;min-width:72px}
     label.select{font-weight:700}
     @media(min-width:640px){ .mobile-controls{display:none} }
     @media(max-width:639px){ .controls{display:none} }
@@ -44,6 +44,12 @@
       </label>
       <label style="margin-left:8px; font-weight:700">Nightmare:
         <input id="nightmareToggle" type="checkbox" style="margin-left:8px;transform:scale(1.2)" />
+      </label>
+      <label style="margin-left:8px; font-weight:700">Aim Assist:
+        <input id="aimAssistToggle" type="checkbox" style="margin-left:8px;transform:scale(1.1)" />
+      </label>
+      <label style="margin-left:8px; font-weight:700">Auto Power:
+        <input id="autoPowerToggle" type="checkbox" style="margin-left:8px;transform:scale(1.1)" />
       </label>
 
       <label class="select roster">Player:
@@ -140,7 +146,7 @@
     const goal = { x: W - 60, y: H/2 - 90, w: 14, h: 180 };
 
     // Player (Portugal colors) — jersey fills will be drawn
-    const player = { x: 140, y: H/2, r: 18, vx:0, vy:0, speed: 2.2 };
+    const player = { x: 140, y: H/2, r: 18, vx:0, vy:0, speed: 3.0 };
     // Ball with spin
     const ball = { x: player.x + 30, y: player.y, vx:0, vy:0, r:8, friction: 0.992, spin:0 };
 
@@ -236,20 +242,31 @@
     function shoot(){ if(!running) { running = true; loop(); }
       const dx = aim.ax - ball.x, dy = aim.ay - ball.y; const d = Math.hypot(dx,dy) || 1;
       const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10)));
-      // power: distance dragged scaled by level (stronger scaling per your request)
+
+      // easier controls: smaller drag gives more power (kids)
       const drag = Math.min(220, d);
-      const powerBase = 0.8 + (drag/220) * 1.6; // 0.8..2.4
-      const power = powerBase * (1 + (level-1)*0.14); // increase by level, slightly stronger
+      // divisor smaller -> more power for small drags
+      const powerBase = 0.8 + (drag/140) * 1.8; // ~0.8..3.2 scaled
+      let power = powerBase * (1 + (level-1)*0.10);
+
+      // auto-power tap: if user just tapped (small drag) and autoPower enabled, give full power
+      const autoPower = !!document.getElementById('autoPowerToggle').checked;
+      if(autoPower && d < 18){ power = Math.max(power, 2.2); }
 
       // player-specific power modifiers (real players)
       const pid = parseInt(playerSelect.value||'1',10);
-      // make players a bit stronger overall to make the game easier
       const PLAYER_POWER = {1:0.95,2:1.35,3:1.12,4:1.10,5:1.08,6:1.00,7:1.00,8:1.10,9:1.08,10:1.05};
       const pmod = PLAYER_POWER[pid] || 1.0;
 
+      // aim assist: nudge direction slightly toward goal center if enabled
+      const aimAssist = !!document.getElementById('aimAssistToggle').checked;
+      let dirx = dx / d, diry = dy / d;
+      if(aimAssist){ const gx = (goal.x + goal.w/2) - ball.x; const gy = (goal.y + goal.h/2) - ball.y; const gd = Math.hypot(gx,gy) || 1; const gnx = gx/gd, gny = gy/gd; const assistStrength = 0.28; dirx = dirx*(1-assistStrength) + gnx*assistStrength; diry = diry*(1-assistStrength) + gny*assistStrength; const nd = Math.hypot(dirx,diry)||1; dirx/=nd; diry/=nd; }
+
       const impulse = power * 5.2 * pmod;
-      // apply impulse
-      ball.vx += (dx/d) * impulse; ball.vy += (dy/d) * impulse;
+      // apply impulse along final direction
+      ball.vx += dirx * impulse; ball.vy += diry * impulse;
+
       // add spin from horizontal aim offset (makes curve)
       ball.spin = ((aim.ax - (player.x+30)) / 120) * 0.18;
       // trigger kick animation
