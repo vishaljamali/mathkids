@@ -137,7 +137,7 @@
     const playerSelect = document.getElementById('playerSelect');
 
     // Field & goal
-    const goal = { x: W - 60, y: H/2 - 80, w: 8, h: 160 };
+    const goal = { x: W - 60, y: H/2 - 90, w: 14, h: 180 };
 
     // Player (Portugal colors) — jersey fills will be drawn
     const player = { x: 140, y: H/2, r: 18, vx:0, vy:0, speed: 2.2 };
@@ -145,7 +145,8 @@
     const ball = { x: player.x + 30, y: player.y, vx:0, vy:0, r:8, friction: 0.992, spin:0 };
 
     // Goalkeeper (AI)
-    const keeper = { x: W - 90, y: H/2, vy:0, baseSpeed: 1.6, reach: 52, name: 'Rui Patrício' };
+    // Made easier by lowering baseSpeed and reach (you can still tune with sliders)
+    const keeper = { x: W - 90, y: H/2, vy:0, baseSpeed: 1.1, reach: 40, name: 'Rui Patrício' };
 
     // player photo element — update when roster changes
     const playerPhoto = document.getElementById('playerPhoto');
@@ -175,8 +176,8 @@
     function saveSettings(){ try{ const s = { speed: parseFloat(keeperSpeedInput.value), reach: parseFloat(keeperReachInput.value), teleport: parseFloat(teleportChanceInput.value)}; localStorage.setItem('soccer-settings', JSON.stringify(s)); }catch(e){}
     }
     function applySettings(){ try{ const s = JSON.parse(localStorage.getItem('soccer-settings')||'{}'); keeper.baseSpeed = 1.6 * (s.speed||1); keeper.reach = 52 * (s.reach||1); window._soccerTeleportChance = (s.teleport||0.12); }catch(e){ window._soccerTeleportChance = 0.12; }}
-    keeper.baseSpeed = 1.6; // default
-    window._soccerTeleportChance = 0.12;
+    keeper.baseSpeed = 1.1; // easier default
+    window._soccerTeleportChance = 0.02; // very small teleport chance by default
 
     keeperSpeedInput.addEventListener('input', ()=>{ saveSettings(); applySettings(); });
     keeperReachInput.addEventListener('input', ()=>{ saveSettings(); applySettings(); });
@@ -242,7 +243,8 @@
 
       // player-specific power modifiers (real players)
       const pid = parseInt(playerSelect.value||'1',10);
-      const PLAYER_POWER = {1:0.90,2:1.25,3:1.08,4:1.06,5:1.02,6:0.95,7:0.95,8:1.04,9:1.03,10:1.00}; // tuned: Ronaldo strongest
+      // make players a bit stronger overall to make the game easier
+      const PLAYER_POWER = {1:0.95,2:1.35,3:1.12,4:1.10,5:1.08,6:1.00,7:1.00,8:1.10,9:1.08,10:1.05};
       const pmod = PLAYER_POWER[pid] || 1.0;
 
       const impulse = power * 5.2 * pmod;
@@ -260,8 +262,8 @@
     function checkGoal(){ if(ball.x + ball.r > goal.x && ball.x - ball.r < goal.x + goal.w){ if(ball.y > goal.y && ball.y < goal.y + goal.h) return true; } return false; }
 
     // Keeper AI: follows ball y with speed scaled by level
-    function updateKeeper(dt){ const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10))); const nightmare = !!document.getElementById('nightmareToggle').checked; const speedBase = keeper.baseSpeed + (level-1)*0.28; const speed = (level===10 || nightmare) ? speedBase * 1.6 : speedBase; const dir = Math.sign(ball.y - keeper.y); keeper.vy = dir * speed; keeper.y += keeper.vy * dt; // small teleport chance at L10 or nightmare when ball is close to goal
-      const teleChance = (nightmare ? Math.max(0.12, window._soccerTeleportChance) : (level===10 ? window._soccerTeleportChance : 0));
+    function updateKeeper(dt){ const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10))); const nightmare = !!document.getElementById('nightmareToggle').checked; const speedBase = keeper.baseSpeed + (level-1)*0.12; const speed = (level===10 || nightmare) ? speedBase * 1.25 : speedBase; const dir = Math.sign(ball.y - keeper.y); keeper.vy = dir * speed; keeper.y += keeper.vy * dt; // small teleport chance at L10 or nightmare when ball is close to goal
+      const teleChance = (nightmare ? Math.max(0.02, window._soccerTeleportChance) : (level===10 ? window._soccerTeleportChance : 0));
       if((level===10 || nightmare) && ball.x > W-260 && Math.random() < teleChance){ keeper.y = ball.y; }
       keeper.y = Math.max(goal.y + 20, Math.min(goal.y + goal.h - 20, keeper.y)); }
 
@@ -301,7 +303,7 @@
       // goal check
       if(checkGoal()){
         const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10)));
-        const reachEff = keeper.reach * (level===10?1.6:1);
+        const reachEff = keeper.reach * (level===10?1.2:1); 
         const close = Math.hypot(ball.x - keeper.x, ball.y - keeper.y) < reachEff + 12;
         if(!close){
           // goal scored
