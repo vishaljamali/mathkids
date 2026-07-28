@@ -152,8 +152,15 @@
     function setPlayerPhoto(id){ try{ const jpg = 'images/portugal' + id + '.jpg'; const svg = 'images/portugal' + id + '.svg'; // prefer jpg if present
           fetch(jpg, { method: 'HEAD' }).then(res => { if(res.ok) playerPhoto.src = jpg; else playerPhoto.src = svg; }).catch(()=>{ playerPhoto.src = svg; }); }catch(e){} }
 
+    // --- Sprite loader: will load images/player{id}-sprite.png if present ---
+    const PLAYER_SPRITES = {}; // id -> {img, fw, fh, frames}
+    function loadPlayerSprite(id, frameW=128, frameH=128){ const paths = [`images/player${id}-sprite.png`,`images/player${id}-sheet.png`,`images/player${id}.png`]; for(const p of paths){ fetch(p,{method:'HEAD'}).then(r=>{ if(!r.ok) return; const img = new Image(); img.src = p; img.onload = ()=>{ const frames = Math.max(1, Math.floor(img.width / frameW)); PLAYER_SPRITES[id] = {img, fw: frameW, fh: frameH, frames}; }; } ).catch(()=>{}); }
+    }
+    // try to preload sprites for all players (will quietly skip missing files)
+    for(let i=1;i<=10;i++) loadPlayerSprite(i,128,128);
+
     // achievements / counts helpers
-    function loadCounts(){ try{ const counts = JSON.parse(localStorage.getItem('soccer-goals')||'{}'); return counts; }catch(e){return {};}};
+    function loadCounts(){ try{ const counts = JSON.parse(localStorage.getItem('soccer-goals')||'{}'); return counts; }catch(e){return {};} };
     function saveCounts(c){ try{ localStorage.setItem('soccer-goals', JSON.stringify(c)); }catch(e){}
     }
     function updateCountsDisplay(){ try{ const counts = loadCounts(); const mapNames = {1:'Rui',2:'Ronaldo',3:'Bruno',4:'Bernardo',5:'João F',6:'Rúben D',7:'Pepe',8:'Jota',9:'Cancelo',10:'Rúben N'}; const el = document.getElementById('playerCounts'); el.innerHTML = ''; for(let i=1;i<=10;i++){ const c = counts[i]||0; const span = document.createElement('span'); span.style.cssText='display:inline-block;background:rgba(255,255,255,0.04);padding:4px 8px;border-radius:8px;margin-right:6px;font-weight:700'; span.textContent = mapNames[i]+': '+c; el.appendChild(span);} }catch(e){}
@@ -344,17 +351,33 @@
       ctx.fillStyle = '#d62828'; ctx.fillRect(12,8,24,14); ctx.fillStyle = '#06b873'; ctx.fillRect(12+24,8,24,14);
       ctx.fillStyle = '#fff9'; ctx.font = '14px sans-serif'; ctx.fillText('Portugal National Team', 12+52, 20);
 
-      // player (Portugal: red shirt, green shorts) with simple kick animation
-      const ka = player.kickAnim || 0; const lean = ka * 6; // lean degrees
-      // draw legs (green)
-      ctx.save(); ctx.translate(player.x, player.y+10); ctx.rotate(-lean*0.01); ctx.fillStyle = '#06b873'; ctx.beginPath(); ctx.ellipse(0, 0, player.r*0.6, player.r*0.4, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
-      // shirt (red)
-      ctx.save(); ctx.translate(player.x, player.y-2); ctx.rotate(-lean*0.01); ctx.fillStyle = '#d62828'; ctx.beginPath(); ctx.arc(0, 0, player.r, Math.PI, 0); ctx.fill(); ctx.restore();
-      // head
-      ctx.fillStyle = '#f7e6d6'; ctx.beginPath(); ctx.arc(player.x, player.y-18, player.r*0.45, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#062'; ctx.fillRect(player.x-3, player.y-20, 6, 6);
-      // decay kickAnim
-      if(player.kickAnim && player.kickAnim>0) player.kickAnim = Math.max(0, player.kickAnim - 0.06);
+      // player drawing: prefer sprite if available, otherwise draw simple shapes
+      const pid = parseInt(playerSelect.value||'1',10);
+      const sprite = PLAYER_SPRITES[pid];
+      const anim = player.kickAnim || 0;
+      if(sprite && sprite.img && sprite.img.complete){
+        // frame progress: when anim is large (just kicked) show later frames, then return to frame 0
+        const t = Math.max(0, Math.min(1, anim / 1.2)); // 0..1
+        const frameIdx = Math.min(sprite.frames-1, Math.floor((1 - t) * sprite.frames));
+        const sx = frameIdx * sprite.fw;
+        const sy = 0;
+        const dw = sprite.fw;
+        const dh = sprite.fh;
+        // draw centered, scale down a bit for the player circle size
+        const scale = (player.r*2) / Math.max(dw, dh) * 1.1;
+        const dw2 = dw * scale; const dh2 = dh * scale;
+        ctx.drawImage(sprite.img, sx, sy, sprite.fw, sprite.fh, player.x - dw2/2, player.y - dh2/2 - 6, dw2, dh2);
+        // decay animation
+        if(player.kickAnim && player.kickAnim>0) player.kickAnim = Math.max(0, player.kickAnim - 0.06);
+      } else {
+        // fallback shapes
+        const ka = anim || 0; const lean = ka * 6; // lean degrees
+        ctx.save(); ctx.translate(player.x, player.y+10); ctx.rotate(-lean*0.01); ctx.fillStyle = '#06b873'; ctx.beginPath(); ctx.ellipse(0, 0, player.r*0.6, player.r*0.4, 0, 0, Math.PI*2); ctx.fill(); ctx.restore();
+        ctx.save(); ctx.translate(player.x, player.y-2); ctx.rotate(-lean*0.01); ctx.fillStyle = '#d62828'; ctx.beginPath(); ctx.arc(0, 0, player.r, Math.PI, 0); ctx.fill(); ctx.restore();
+        ctx.fillStyle = '#f7e6d6'; ctx.beginPath(); ctx.arc(player.x, player.y-18, player.r*0.45, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#062'; ctx.fillRect(player.x-3, player.y-20, 6, 6);
+        if(player.kickAnim && player.kickAnim>0) player.kickAnim = Math.max(0, player.kickAnim - 0.06);
+      }
 
       // ball (with a small marking)
       ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#0008'; ctx.stroke();
