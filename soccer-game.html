@@ -48,9 +48,13 @@
       <label style="margin-left:8px; font-weight:700">Aim Assist:
         <input id="aimAssistToggle" type="checkbox" style="margin-left:8px;transform:scale(1.1)" />
       </label>
+      <label style="margin-left:8px; font-weight:700">Aim Strength (0–50%):
+        <input id="aimStrength" type="range" min="0" max="50" step="1" value="28" style="margin-left:8px;vertical-align:middle">
+      </label>
       <label style="margin-left:8px; font-weight:700">Auto Power:
         <input id="autoPowerToggle" type="checkbox" style="margin-left:8px;transform:scale(1.1)" />
       </label>
+      <div id="hudHint" style="margin-left:8px;font-size:0.95rem;opacity:0.95"></div>
 
       <label class="select roster">Player:
         <select id="playerSelect" style="margin-left:6px;padding:6px;border-radius:6px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.06);">
@@ -191,10 +195,15 @@
 
     // listen for roster changes
     document.getElementById('playerSelect').addEventListener('change', (e)=>{ setPlayerPhoto(e.target.value); updateCountsDisplay(); const val = parseInt(e.target.value||'1',10); keeper.name = (val===1 ? 'Rui Patrício' : 'Rui Patrício'); });
+    // listen for toggles to update HUD hint
+    document.getElementById('aimAssistToggle').addEventListener('change', updateHUDHint);
+    document.getElementById('autoPowerToggle').addEventListener('change', updateHUDHint);
+    document.getElementById('aimStrength').addEventListener('input', updateHUDHint);
     // set initial photo
     setPlayerPhoto(document.getElementById('playerSelect').value);
     updateCountsDisplay();
     loadSettings(); applySettings();
+    updateHUDHint();
 
     // confetti particles for celebration
     let confetti = [];
@@ -206,10 +215,16 @@
     // input
     const keys = { left:false, right:false };
 
-    // sound helper (short tones)
-    function tone(f,type,dur,vol){ try{ const ac = new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(); const g = ac.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(vol||0.12, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); setTimeout(()=>{ try{ ac.close() }catch(e){} }, (dur+0.05)*1000); }catch(e){} }
-    function playKick(){ tone(220,'sawtooth',0.06,0.12); }
-    function playGoal(){ tone(880,'triangle',0.18,0.16); setTimeout(()=>tone(660,'sine',0.12,0.12),120); }
+  // sound helper: try playing small audio files first, fallback to synth tones
+  function tone(f,type,dur,vol){ try{ const ac = new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(); const g = ac.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(vol||0.12, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); setTimeout(()=>{ try{ ac.close() }catch(e){} }, (dur+0.05)*1000); }catch(e){} }
+  function tryPlayAudio(path){ try{ const a = new Audio(path); a.volume = 0.9; a.play().catch(()=>{}); return true; }catch(e){ return false; } }
+  function playKick(){ // try local file first
+    if(!tryPlayAudio('audio/kick.mp3') && !tryPlayAudio('audio/kick.ogg')) tone(220,'sawtooth',0.06,0.12);
+  }
+  function playGoal(){ if(!tryPlayAudio('audio/goal.mp3') && !tryPlayAudio('audio/goal.ogg')){ tone(880,'triangle',0.18,0.16); setTimeout(()=>tone(660,'sine',0.12,0.12),120); } }
+
+  // small HUD hint updater
+  function updateHUDHint(){ try{ const hint = document.getElementById('hudHint'); const aimOn = document.getElementById('aimAssistToggle').checked; const autoOn = document.getElementById('autoPowerToggle').checked; const parts = []; if(aimOn) parts.push('Aim Assist ON / Zielhilfe AN'); if(autoOn) parts.push('Auto Power ON / Automatische Kraft AN'); hint.textContent = parts.join(' • '); }catch(e){} }
 
     // Resize canvas display to be responsive
     function fitCanvas(){ const rect = canvas.getBoundingClientRect(); canvas.style.height = Math.round(rect.width * (H / W)) + 'px'; }
