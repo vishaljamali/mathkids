@@ -303,39 +303,63 @@
     function spawnConfetti(){ for(let i=0;i<60;i++){ confetti.push({x:goal.x + goal.w/2 + (Math.random()*160-80), y:goal.y + Math.random()*goal.h, vx:(Math.random()*6-3), vy:(Math.random()*-6-1), r:Math.random()*4+2, c:['#ffd166','#4cc9f0','#d62828','#06b873'][Math.floor(Math.random()*4)], life:1}); } }
     function drawConfetti(dt){ for(let i=confetti.length-1;i>=0;i--){ const p = confetti[i]; p.x += p.vx * dt * 60; p.y += p.vy * dt * 60; p.vy += 0.22; p.life -= 0.02; ctx.globalAlpha = Math.max(0,p.life); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill(); if(p.life<=0) confetti.splice(i,1); } ctx.globalAlpha = 1; }
 
-    // Physics step with spin and improved reflections
-    function step(dt){ // player movement
+    // Physics step with spin, air drag, lift, trail, and improved post collisions
+    function step(dt){
+      // player movement (smoother)
       if(keys.left) player.x -= player.speed * 60 * dt; if(keys.right) player.x += player.speed * 60 * dt;
       player.x = Math.max(40, Math.min(W-220, player.x)); if(!aiming) player.y += (H/2 - player.y) * 0.1;
       // keep ball near player when still
       const dist = Math.hypot(ball.x - player.x - 30, ball.y - player.y);
       if(dist < player.r + ball.r + 6 && Math.hypot(ball.vx,ball.vy) < 0.6){ ball.x = player.x + 30; ball.y = player.y; ball.vx = 0; ball.vy = 0; ball.spin = 0; }
 
-      // ball physics with spin (curve effect)
-      // apply spin as lateral force perpendicular to velocity
+      // apply spin lateral effect
       if(Math.hypot(ball.vx, ball.vy) > 0.01){ const speed = Math.hypot(ball.vx, ball.vy); const nx = -ball.vy/speed; const ny = ball.vx/speed; ball.vx += nx * ball.spin * 0.12 * dt * 60; ball.vy += ny * ball.spin * 0.12 * dt * 60; }
-      ball.x += ball.vx * dt * 60; ball.y += ball.vy * dt * 60; ball.vx *= ball.friction; ball.vy *= ball.friction; ball.spin *= 0.996;
-      // small ground friction
+
+      // air drag (proportional to v^2), easier coefficients for phones
+      const sp = Math.hypot(ball.vx, ball.vy);
+      if(sp > 0.001){ const dragCoef = 0.0009; ball.vx -= ball.vx * dragCoef * sp * dt * 60; ball.vy -= ball.vy * dragCoef * sp * dt * 60; }
+
+      // lift: small upward effect for fast shots (gives a small curve)
+      if(sp > 4){ const lift = 0.0009 * sp * sp * dt * 60; ball.vy -= lift; }
+
+      // update position
+      ball.x += ball.vx * dt * 60;
+      ball.y += ball.vy * dt * 60;
+      // friction
+      ball.vx *= ball.friction; ball.vy *= ball.friction; ball.spin *= 0.995;
+
+      // trail: push recent positions
+      if(!ball.trail) ball.trail = [];
+      ball.trail.push({x:ball.x,y:ball.y,life:1}); if(ball.trail.length>24) ball.trail.shift();
+
       if(Math.abs(ball.vx) < 0.02) ball.vx = 0; if(Math.abs(ball.vy) < 0.02) ball.vy = 0;
       // bounds
       if(ball.x < ball.r) { ball.x = ball.r; ball.vx *= -0.45; ball.spin *= 0.6; }
       if(ball.y < ball.r) { ball.y = ball.r; ball.vy *= -0.45; ball.spin *= 0.6; }
       if(ball.y > H - ball.r) { ball.y = H - ball.r; ball.vy *= -0.45; ball.spin *= 0.6; }
 
+      // post collisions (left and right vertical posts)
+      const leftPostX = goal.x; const rightPostX = goal.x + goal.w;
+      const hitLeft = ball.x - ball.r < leftPostX + 6 && ball.x > leftPostX - 6;
+      const hitRight = ball.x + ball.r > rightPostX - 6 && ball.x < rightPostX + 6;
+      if((hitLeft || hitRight) && ball.y > goal.y && ball.y < goal.y + goal.h){ // hit a post
+        ball.vx = -ball.vx * 0.45; ball.vy *= 0.6; ball.spin *= 0.6; try{ tone(540,'square',0.12,0.12);}catch(e){}
+      }
+
       // keeper and save
       updateKeeper(dt);
       const kdx = ball.x - keeper.x; const kdy = ball.y - keeper.y;
-      // use effective reach (L10 harder)
       const levelNow = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10)));
-      const reachEffNow = keeper.reach * (levelNow===10?1.35:1);
+      const reachEffNow = keeper.reach * (levelNow===10?1.2:1);
       if(Math.hypot(kdx,kdy) < reachEffNow){ // saved
-        ball.vx = -Math.abs(ball.vx) * 0.6 - 1.2; ball.vy *= 0.6; ball.spin *= 0.6;
+        // smoother save: damp velocity and add small upward bounce
+        ball.vx = -Math.abs(ball.vx) * 0.55; ball.vy *= 0.55; ball.spin *= 0.6; try{ tone(380,'sine',0.08,0.08);}catch(e){}
       }
 
       // goal check
       if(checkGoal()){
         const level = Math.min(10, Math.max(1, parseInt(levelSelect.value||'1',10)));
-        const reachEff = keeper.reach * (level===10?1.2:1); 
+        const reachEff = keeper.reach * (level===10?1.2:1);
         const close = Math.hypot(ball.x - keeper.x, ball.y - keeper.y) < reachEff + 12;
         if(!close){
           // goal scored
