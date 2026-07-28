@@ -87,6 +87,8 @@
       </div>
       <div style="margin-left:auto;display:flex;gap:10px;align-items:center" class="hud"> 
         <button id="showAchievements" class="btn" style="background:#4cc9f0;color:#062;padding:8px 10px;border-radius:8px">Achievements</button>
+        <button id="enableSoundBtn" class="btn" style="background:#ffd166;color:#062;padding:8px 10px;border-radius:8px">Enable Sound</button>
+        <button id="replayBtn" class="btn" style="background:#90be6d;color:#062;padding:8px 10px;border-radius:8px;display:none">Replay Goal</button>
         <div>Portugal National Team 🇵🇹 &nbsp; Score: <span id="score">0</span> &nbsp;|&nbsp; Shots: <span id="shots">0</span></div>
       </div>
     </div>
@@ -208,12 +210,30 @@
     // confetti particles for celebration
     let confetti = [];
 
+    // replay buffer for highlights (stores recent states)
+    let lastStates = [];
+    const REPLAY_FRAMES = 120; // about 2 seconds at 60fps
+    let isReplaying = false;
+
     // Aim control
     let aim = { ax: ball.x, ay: ball.y };
     let aiming = false;
 
     // input
     const keys = { left:false, right:false };
+
+    // sound & audio elements
+    let crowdAudio = null;
+    let audioEnabled = false;
+    function enableSound(){ try{
+      // resume AudioContext on user gesture
+      if(window.AudioContext || window.webkitAudioContext){ try{ const ac = new (window.AudioContext||window.webkitAudioContext)(); if(ac.state === 'suspended') ac.resume().catch(()=>{}); }catch(e){} }
+      // try to load crowd loop
+      crowdAudio = new Audio('audio/crowd.mp3'); crowdAudio.loop = true; crowdAudio.volume = 0.18;
+      crowdAudio.play().then(()=>{ audioEnabled = true; document.getElementById('enableSoundBtn').textContent='Sound On'; }).catch(()=>{ audioEnabled = true; document.getElementById('enableSoundBtn').textContent='Sound On'; });
+    }catch(e){ audioEnabled = true; try{ document.getElementById('enableSoundBtn').textContent='Sound On' }catch(e){} }}
+
+    document.getElementById('enableSoundBtn').addEventListener('click', ()=>{ enableSound(); });
 
   // sound helper: try playing small audio files first, fallback to synth tones
   function tone(f,type,dur,vol){ try{ const ac = new (window.AudioContext || window.webkitAudioContext)(); const o = ac.createOscillator(); const g = ac.createGain(); o.type = type || 'sine'; o.frequency.value = f; g.gain.setValueAtTime(vol||0.12, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+dur); o.connect(g); g.connect(ac.destination); o.start(); o.stop(ac.currentTime+dur); setTimeout(()=>{ try{ ac.close() }catch(e){} }, (dur+0.05)*1000); }catch(e){} }
@@ -328,9 +348,12 @@
       // friction
       ball.vx *= ball.friction; ball.vy *= ball.friction; ball.spin *= 0.995;
 
-      // trail: push recent positions
+      // trail: push recent positions (for visuals and replay)
       if(!ball.trail) ball.trail = [];
-      ball.trail.push({x:ball.x,y:ball.y,life:1}); if(ball.trail.length>24) ball.trail.shift();
+      ball.trail.push({x:ball.x,y:ball.y,life:1}); if(ball.trail.length>40) ball.trail.shift();
+      // save to replay buffer
+      lastStates.push({t:Date.now(), ball:{x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy,spin:ball.spin}, player:{x:player.x,y:player.y}, keeper:{y:keeper.y}});
+      if(lastStates.length > REPLAY_FRAMES) lastStates.shift();
 
       if(Math.abs(ball.vx) < 0.02) ball.vx = 0; if(Math.abs(ball.vy) < 0.02) ball.vy = 0;
       // bounds
@@ -386,6 +409,9 @@
             localStorage.setItem('soccer-badges', JSON.stringify(badges));
           }catch(e){}
 
+          // show replay button and auto-play short replay
+          const replayBtn = document.getElementById('replayBtn'); if(replayBtn){ replayBtn.style.display='inline-block'; }
+          playReplay(1500);
           // reset ball
           setTimeout(()=>{ ball.x = player.x + 30; ball.y = player.y; ball.vx = ball.vy = ball.spin = 0; }, 350);
         } else {
@@ -397,6 +423,8 @@
 
     // Draw scene with Portugal colors
     function draw(){ ctx.clearRect(0,0,W,H);
+      // draw ball trail (more visible for fast shots)
+      if(ball.trail && ball.trail.length){ for(let i=ball.trail.length-1;i>=0;i--){ const p=ball.trail[i]; const alpha = p.life * (i/ball.trail.length); ctx.globalAlpha = Math.max(0.06, alpha*0.9); ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(1, i/6), 0, Math.PI*2); ctx.fill(); } ctx.globalAlpha = 1; }
       // grass stripes
       const stripeW = 40; for(let i=0;i<Math.ceil(W/stripeW);i++){ ctx.fillStyle = i%2? '#0a6b3f':'#0b8f4f'; ctx.fillRect(i*stripeW,0,stripeW,H); }
       // center line
@@ -456,6 +484,31 @@
       // draw confetti on top
       if(confetti.length) drawConfetti(1/60);
     }
+
+    // Replay: play last N states as a short highlight
+    function playReplay(duration=1500){ try{
+      if(lastStates.length<4) return;
+      isReplaying = true;
+      const states = lastStates.slice(-Math.floor(duration / (1000/60)));
+      const saved = { ball:{...ball}, player:{...player}, keeperY: keeper.y };
+      let i = 0;
+      const start = performance.now();
+      function stepReplay(){
+        if(i>=states.length){ isReplaying=false; // restore
+          ball.x = saved.ball.x; ball.y = saved.ball.y; ball.vx=saved.ball.vx; ball.vy=saved.ball.vy; player.x=saved.player.x; player.y=saved.player.y; keeper.y = saved.keeperY; return; }
+        const s = states[i];
+        // temporarily set positions
+        const tb = {x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy,spin:ball.spin}; const tp = {x:player.x,y:player.y}; const tk = keeper.y;
+        ball.x = s.ball.x; ball.y = s.ball.y; ball.vx=s.ball.vx; ball.vy=s.ball.vy; ball.spin=s.ball.spin;
+        player.x = s.player.x; player.y = s.player.y; keeper.y = s.keeper.y;
+        draw();
+        // restore to the temporary values we saved for next frame (we don't need to restore since we overwrite each frame)
+        i++; requestAnimationFrame(stepReplay);
+      }
+      requestAnimationFrame(stepReplay);
+    }catch(e){} }
+
+    document.getElementById('replayBtn').addEventListener('click', ()=>{ playReplay(1800); });
 
     // Achievements helpers
     function showBadge(title, msg){ try{ const modal = document.getElementById('achModal'); if(modal){ // create a temporary toast in modal list
