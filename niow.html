@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Niow Quiz — English</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:Segoe UI,Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#071428,#193047);color:#fff;padding:18px}
+    .card{width:100%;max-width:760px;background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+    h1{font-size:1.4rem;margin-bottom:6px;color:#ffd166}
+    p.lead{opacity:0.9;margin-bottom:12px}
+    .question{font-size:1.1rem;margin:12px 0}
+    .choices{display:grid;grid-template-columns:1fr;gap:10px}
+    @media(min-width:560px){.choices{grid-template-columns:1fr 1fr}}
+    .choice{background:rgba(255,255,255,0.04);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);cursor:pointer;font-weight:800}
+    .choice.correct{background:linear-gradient(90deg,#90ee90,#4cc9f0);color:#062}
+    .choice.wrong{background:linear-gradient(90deg,#ff9f9f,#ffb3b3);color:#600}
+    .controls{display:flex;gap:8px;margin-top:14px;align-items:center}
+    .btn{padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:800}
+    .btn.next{background:#4cc9f0;color:#062}
+    .btn.restart{background:#ffd166;color:#062}
+    footer{margin-top:14px;text-align:center;opacity:0.8}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Niow English Quiz ✨</h1>
+    <p class="lead">A tiny quiz for practice. No timer — go at your own speed. Good luck! 😊</p>
+
+    <div id="qwrap">
+      <div class="question" id="question">Ready?</div>
+      <div class="choices" id="choices"></div>
+      <div id="explain" style="margin-top:10px;opacity:0.9;font-size:0.95rem;min-height:28px"></div>
+    </div>
+
+    <div class="controls">
+      <button id="btn-next" class="btn next">Next ▶</button>
+      <button id="btn-restart" class="btn restart">Restart ⟲</button>
+      <div style="margin-left:auto" id="feedback"></div>
+    </div>
+
+    <footer>Niow Quiz — simple and friendly for kids.</footer>
+  </div>
+
+<script>
+const QUIZ = [
+  {q:'Which word is a noun?', c:['Run','Blue','Dog','Quick'], a:2, explain:'A noun is a person, place, or thing. "Dog" is a thing.'},
+  {q:'Choose the past of "eat".', c:['eated','ate','eaten','eat'], a:1, explain:'The past of "eat" is "ate".'},
+  {q:'Which is opposite of "fast"?', c:['quick','slow','speed','move'], a:1, explain:'Slow is the opposite of fast.'},
+  {q:'Pick correct spelling: "friend"', c:['frend','friend','freind','friennd'], a:1, explain:'"Friend" is spelled f-r-i-e-n-d.'},
+  {q:'What ends a question?', c:['!','?','.',';'], a:1, explain:'A question mark (?) ends a question.'}
+];
+
+let idx=0, locked=false;
+const qEl=document.getElementById('question');
+const choicesEl=document.getElementById('choices');
+const explainEl=document.getElementById('explain');
+const feedbackEl=document.getElementById('feedback');
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a }
+let questions = shuffle(QUIZ.slice());
+
+function showQuestion(){ locked=false; explainEl.textContent=''; const q=questions[idx]; qEl.textContent=(idx+1)+'. '+q.q; choicesEl.innerHTML=''; q.c.forEach((txt,i)=>{ const b=document.createElement('button'); b.className='choice'; b.textContent=txt; b.onclick=()=>choose(i,b); choicesEl.appendChild(b); }); }
+
+function choose(i,but){ if(locked) return; locked=true; const q=questions[idx]; if(i===q.a){ but.classList.add('correct'); feedback('Good!'); } else { but.classList.add('wrong'); revealAnswer(); feedback('Try next'); } explainEl.textContent=q.explain||''; setTimeout(()=>{ idx++; if(idx>=questions.length) finish(); else showQuestion(); },900); }
+
+function revealAnswer(){ const q=questions[idx]; const buttons = choicesEl.querySelectorAll('.choice'); buttons.forEach((b,i)=>{ if(i===q.a) b.classList.add('correct'); }); }
+function finish(){ qEl.textContent='Quiz finished!'; choicesEl.innerHTML=''; feedback('Well done!'); }
+function feedback(msg){ feedbackEl.textContent=msg; setTimeout(()=>{ feedbackEl.textContent=''; },1100); }
+function restart(){ questions=shuffle(QUIZ.slice()); idx=0; locked=false; showQuestion(); explainEl.textContent=''; }
+
+document.getElementById('btn-next').addEventListener('click', ()=>{ if(!locked){ revealAnswer(); locked=true; setTimeout(()=>{ idx++; if(idx>=questions.length) finish(); else showQuestion(); },800); } else { idx++; if(idx>=questions.length) finish(); else showQuestion(); } });
+document.getElement
